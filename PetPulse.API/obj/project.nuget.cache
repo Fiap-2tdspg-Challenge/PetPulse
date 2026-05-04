@@ -1,11 +1,19 @@
 {
   "version": 2,
-  "dgSpecHash": "4wKSjsxTNaY=",
+  "dgSpecHash": "h3GmjRs4mrk=",
   "success": true,
   "projectFilePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",
-    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.7\\microsoft.entityframeworkcore.10.0.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\10.0.7\\microsoft.entityframeworkcore.abstractions.10.0.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\10.0.7\\microsoft.entityframeworkcore.analyzers.10.0.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.extensions.apidescription.server\\10.0.0\\microsoft.extensions.apidescription.server.10.0.0.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.openapi\\2.4.1\\microsoft.openapi.2.4.1.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\swashbuckle.aspnetcore\\10.1.7\\swashbuckle.aspnetcore.10.1.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\10.1.7\\swashbuckle.aspnetcore.swagger.10.1.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\10.1.7\\swashbuckle.aspnetcore.swaggergen.10.1.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\10.1.7\\swashbuckle.aspnetcore.swaggerui.10.1.7.nupkg.sha512"
   ],
   "logs": []
 }
