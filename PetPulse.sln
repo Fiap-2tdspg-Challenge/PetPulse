@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetPulse.API", "PetPulse.API\PetPulse.API.csproj", "{66A58DA8-1CF2-4384-AEC5-FCB10A88C143}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetPulse.Application", "PetPulse.Application\PetPulse.Application.csproj", "{9969F710-01BD-45D0-8951-B9FE5388760C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetPulse.Infrastructure", "PetPulse.Infrastructure\PetPulse.Infrastructure.csproj", "{B1E37D58-4422-4669-B646-3C5B697F834F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetPulse.Domain", "PetPulse.Domain\PetPulse.Domain.csproj", "{8DB86F95-BF61-4008-AF59-0FFA595F4CFD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A67B615F-CEBA-4913-8A2D-CD09DBB1426F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{2A39F063-FA8C-4271-9391-2905530D2157}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{66A58DA8-1CF2-4384-AEC5-FCB10A88C143}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66A58DA8-1CF2-4384-AEC5-FCB10A88C143}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66A58DA8-1CF2-4384-AEC5-FCB10A88C143}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66A58DA8-1CF2-4384-AEC5-FCB10A88C143}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9969F710-01BD-45D0-8951-B9FE5388760C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9969F710-01BD-45D0-8951-B9FE5388760C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9969F710-01BD-45D0-8951-B9FE5388760C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9969F710-01BD-45D0-8951-B9FE5388760C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1E37D58-4422-4669-B646-3C5B697F834F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1E37D58-4422-4669-B646-3C5B697F834F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1E37D58-4422-4669-B646-3C5B697F834F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1E37D58-4422-4669-B646-3C5B697F834F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DB86F95-BF61-4008-AF59-0FFA595F4CFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DB86F95-BF61-4008-AF59-0FFA595F4CFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DB86F95-BF61-4008-AF59-0FFA595F4CFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DB86F95-BF61-4008-AF59-0FFA595F4CFD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{66A58DA8-1CF2-4384-AEC5-FCB10A88C143} = {A67B615F-CEBA-4913-8A2D-CD09DBB1426F}
+		{9969F710-01BD-45D0-8951-B9FE5388760C} = {A67B615F-CEBA-4913-8A2D-CD09DBB1426F}
+		{8DB86F95-BF61-4008-AF59-0FFA595F4CFD} = {A67B615F-CEBA-4913-8A2D-CD09DBB1426F}
+		{B1E37D58-4422-4669-B646-3C5B697F834F} = {A67B615F-CEBA-4913-8A2D-CD09DBB1426F}
+	EndGlobalSection
+EndGlobal
