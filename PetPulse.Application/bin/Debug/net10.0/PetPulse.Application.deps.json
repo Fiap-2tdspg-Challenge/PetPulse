@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "PetPulse.Application/1.0.0": {
+        "dependencies": {
+          "PetPulse.Domain": "1.0.0"
+        },
+        "runtime": {
+          "PetPulse.Application.dll": {}
+        }
+      },
+      "PetPulse.Domain/1.0.0": {
+        "runtime": {
+          "PetPulse.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "PetPulse.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "PetPulse.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

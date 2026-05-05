@@ -1,0 +1,16 @@
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\bin\Debug\net10.0\PetPulse.Application.deps.json
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\bin\Debug\net10.0\PetPulse.Application.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\bin\Debug\net10.0\PetPulse.Application.pdb
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\bin\Debug\net10.0\PetPulse.Domain.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\bin\Debug\net10.0\PetPulse.Domain.pdb
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.csproj.AssemblyReference.cache
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.GeneratedMSBuildEditorConfig.editorconfig
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.AssemblyInfoInputs.cache
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.AssemblyInfo.cs
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.csproj.CoreCompileInputs.cache
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.sourcelink.json
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.4B65B2D6.Up2Date
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\refint\PetPulse.Application.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\PetPulse.Application.pdb
+E:\2TDSPG\challenge\PetPulse\PetPulse.Application\obj\Debug\net10.0\ref\PetPulse.Application.dll
