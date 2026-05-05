@@ -9,7 +9,7 @@ namespace PetPulse.Controllers;
 /// </summary>
 /// <remarks>
 /// Base URL: /api/dispositivoiot
-/// Exemplo: http://localhost:5000/api/dispositivoiot
+/// Exemplo: http://localhost:5292/api/dispositivoiot
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
@@ -27,9 +27,12 @@ public class DispositivoIotController : ControllerBase
         _petRepository = petRepository;
     }
 
+    
     /// <summary>
-    /// Lista todos os dispositivos IoT cadastrados.
+    /// Inicializa o controller com os repositórios necessários.
     /// </summary>
+    /// <param name="dispositivoIotRepository">Repositório de dispositivos IoT.</param>
+    /// <param name="petRepository">Repositório de pets.</param>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<DispositivoIotResponse>), StatusCodes.Status200OK)]
     public IActionResult GetAll()
@@ -42,9 +45,14 @@ public class DispositivoIotController : ControllerBase
         return Ok(dispositivos);
     }
 
+ 
     /// <summary>
     /// Busca um dispositivo IoT pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do dispositivo IoT.</param>
+    /// <returns>Dispositivo IoT encontrado.</returns>
+    /// <response code="200">Dispositivo IoT encontrado com sucesso.</response>
+    /// <response code="404">Dispositivo IoT não encontrado.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(DispositivoIotResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -61,6 +69,10 @@ public class DispositivoIotController : ControllerBase
     /// <summary>
     /// Busca o dispositivo IoT vinculado a um pet específico.
     /// </summary>
+    /// <param name="petId">Identificador único do pet.</param>
+    /// <returns>Dispositivo IoT vinculado ao pet.</returns>
+    /// <response code="200">Dispositivo IoT encontrado com sucesso.</response>
+    /// <response code="404">Pet ou dispositivo não encontrado.</response>
     [HttpGet("pet/{petId:guid}")]
     [ProducesResponseType(typeof(DispositivoIotResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -77,9 +89,15 @@ public class DispositivoIotController : ControllerBase
         return Ok(DispositivoIotResponse.FromDomain(dispositivo));
     }
 
+   
     /// <summary>
     /// Cria um novo dispositivo IoT vinculado a um pet.
     /// </summary>
+    /// <param name="request">Dados necessários para criação do dispositivo IoT.</param>
+    /// <returns>Dispositivo IoT criado.</returns>
+    /// <response code="201">Dispositivo IoT criado com sucesso.</response>
+    /// <response code="400">Dados inválidos ou pet já possui dispositivo.</response>
+    /// <response code="404">Pet informado não encontrado.</response>
     [HttpPost]
     [ProducesResponseType(typeof(DispositivoIotResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -111,6 +129,12 @@ public class DispositivoIotController : ControllerBase
     /// <summary>
     /// Atualiza um dispositivo IoT existente.
     /// </summary>
+    /// <param name="id">Identificador único do dispositivo IoT.</param>
+    /// <param name="request">Novos dados do dispositivo IoT.</param>
+    /// <returns>Dispositivo IoT atualizado.</returns>
+    /// <response code="200">Dispositivo IoT atualizado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Pet ou dispositivo IoT não encontrado.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(DispositivoIotResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -146,6 +170,9 @@ public class DispositivoIotController : ControllerBase
     /// <summary>
     /// Remove um dispositivo IoT pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do dispositivo IoT.</param>
+    /// <response code="204">Dispositivo IoT removido com sucesso.</response>
+    /// <response code="404">Dispositivo IoT não encontrado.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

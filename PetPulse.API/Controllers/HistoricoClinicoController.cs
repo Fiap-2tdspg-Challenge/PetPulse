@@ -9,7 +9,7 @@ namespace PetPulse.Controllers;
 /// </summary>
 /// <remarks>
 /// Base URL: /api/historicoclinico
-/// Exemplo: http://localhost:5000/api/historicoclinico
+/// Exemplo: http://localhost:5292/api/historicoclinico
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
@@ -28,8 +28,10 @@ public class HistoricoClinicoController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todos os registros de histórico clínico.
+    /// Lista todos os registros de histórico clínico cadastrados.
     /// </summary>
+    /// <returns>Lista de registros clínicos.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<HistoricoClinicoResponse>), StatusCodes.Status200OK)]
     public IActionResult GetAll()
@@ -43,8 +45,12 @@ public class HistoricoClinicoController : ControllerBase
     }
 
     /// <summary>
-    /// Busca um histórico clínico pelo identificador único.
+    /// Busca um registro de histórico clínico pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do histórico clínico.</param>
+    /// <returns>Histórico clínico encontrado.</returns>
+    /// <response code="200">Histórico clínico encontrado com sucesso.</response>
+    /// <response code="404">Histórico clínico não encontrado.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(HistoricoClinicoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -59,8 +65,12 @@ public class HistoricoClinicoController : ControllerBase
     }
 
     /// <summary>
-    /// Lista os registros clínicos de um pet específico.
+    /// Lista os registros de histórico clínico de um pet específico.
     /// </summary>
+    /// <param name="petId">Identificador único do pet.</param>
+    /// <returns>Lista de históricos clínicos do pet.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <response code="404">Pet não encontrado.</response>
     [HttpGet("pet/{petId:guid}")]
     [ProducesResponseType(typeof(IReadOnlyList<HistoricoClinicoResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -77,9 +87,15 @@ public class HistoricoClinicoController : ControllerBase
         return Ok(historicos);
     }
 
+   
     /// <summary>
-    /// Cria um novo registro de histórico clínico.
+    /// Cria um novo registro de histórico clínico para um pet.
     /// </summary>
+    /// <param name="request">Dados necessários para criação do histórico clínico.</param>
+    /// <returns>Histórico clínico criado.</returns>
+    /// <response code="201">Histórico clínico criado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Pet informado não encontrado.</response>
     [HttpPost]
     [ProducesResponseType(typeof(HistoricoClinicoResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -105,9 +121,16 @@ public class HistoricoClinicoController : ControllerBase
         );
     }
 
+    
     /// <summary>
     /// Atualiza um registro de histórico clínico existente.
     /// </summary>
+    /// <param name="id">Identificador único do histórico clínico.</param>
+    /// <param name="request">Novos dados do histórico clínico.</param>
+    /// <returns>Histórico clínico atualizado.</returns>
+    /// <response code="200">Histórico clínico atualizado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Pet ou histórico clínico não encontrado.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(HistoricoClinicoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -142,6 +165,9 @@ public class HistoricoClinicoController : ControllerBase
     /// <summary>
     /// Remove um registro de histórico clínico pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do histórico clínico.</param>
+    /// <response code="204">Histórico clínico removido com sucesso.</response>
+    /// <response code="404">Histórico clínico não encontrado.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

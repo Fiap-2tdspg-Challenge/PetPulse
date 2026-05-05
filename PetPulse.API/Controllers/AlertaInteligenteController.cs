@@ -10,7 +10,7 @@ namespace PetPulse.Controllers;
 /// </summary>
 /// <remarks>
 /// Base URL: /api/alertainteligente
-/// Exemplo: http://localhost:5000/api/alertainteligente
+/// Exemplo: http://localhost:5292/api/alertainteligente
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
@@ -19,7 +19,13 @@ public class AlertaInteligenteController : ControllerBase
 {
     private readonly IAlertaInteligenteRepository _alertaInteligenteRepository;
     private readonly IPetRepository _petRepository;
-
+    
+    
+    /// <summary>
+    /// Inicializa o controller com os repositórios necessários.
+    /// </summary>
+    /// <param name="alertaInteligenteRepository">Repositório de alertas inteligentes.</param>
+    /// <param name="petRepository">Repositório de pets.</param>
     public AlertaInteligenteController(
         IAlertaInteligenteRepository alertaInteligenteRepository,
         IPetRepository petRepository)
@@ -28,9 +34,12 @@ public class AlertaInteligenteController : ControllerBase
         _petRepository = petRepository;
     }
 
+    
     /// <summary>
     /// Lista todos os alertas inteligentes cadastrados.
     /// </summary>
+    /// <returns>Lista de alertas inteligentes.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AlertaInteligenteResponse>), StatusCodes.Status200OK)]
     public IActionResult GetAll()
@@ -46,6 +55,10 @@ public class AlertaInteligenteController : ControllerBase
     /// <summary>
     /// Busca um alerta inteligente pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do alerta inteligente.</param>
+    /// <returns>Alerta inteligente encontrado.</returns>
+    /// <response code="200">Alerta inteligente encontrado com sucesso.</response>
+    /// <response code="404">Alerta inteligente não encontrado.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(AlertaInteligenteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -60,8 +73,12 @@ public class AlertaInteligenteController : ControllerBase
     }
 
     /// <summary>
-    /// Lista os alertas inteligentes de um pet específico.
+    /// Lista os alertas inteligentes vinculados a um pet específico.
     /// </summary>
+    /// <param name="petId">Identificador único do pet.</param>
+    /// <returns>Lista de alertas inteligentes do pet.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <response code="404">Pet não encontrado.</response>
     [HttpGet("pet/{petId:guid}")]
     [ProducesResponseType(typeof(IReadOnlyList<AlertaInteligenteResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -77,10 +94,13 @@ public class AlertaInteligenteController : ControllerBase
 
         return Ok(alertas);
     }
-
+    
     /// <summary>
     /// Lista os alertas inteligentes por status.
     /// </summary>
+    /// <param name="status">Status do alerta inteligente.</param>
+    /// <returns>Lista de alertas com o status informado.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
     [HttpGet("status/{status}")]
     [ProducesResponseType(typeof(IReadOnlyList<AlertaInteligenteResponse>), StatusCodes.Status200OK)]
     public IActionResult GetByStatus(StatusAlertaEnum status)
@@ -96,6 +116,11 @@ public class AlertaInteligenteController : ControllerBase
     /// <summary>
     /// Cria um novo alerta inteligente.
     /// </summary>
+    /// <param name="request">Dados necessários para criação do alerta inteligente.</param>
+    /// <returns>Alerta inteligente criado.</returns>
+    /// <response code="201">Alerta inteligente criado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Pet informado não encontrado.</response>
     [HttpPost]
     [ProducesResponseType(typeof(AlertaInteligenteResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -124,6 +149,12 @@ public class AlertaInteligenteController : ControllerBase
     /// <summary>
     /// Atualiza os dados principais de um alerta inteligente.
     /// </summary>
+    /// <param name="id">Identificador único do alerta inteligente.</param>
+    /// <param name="request">Novos dados do alerta inteligente.</param>
+    /// <returns>Alerta inteligente atualizado.</returns>
+    /// <response code="200">Alerta inteligente atualizado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Pet ou alerta inteligente não encontrado.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(AlertaInteligenteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -157,6 +188,10 @@ public class AlertaInteligenteController : ControllerBase
     /// <summary>
     /// Marca um alerta inteligente como visualizado.
     /// </summary>
+    /// <param name="id">Identificador único do alerta inteligente.</param>
+    /// <returns>Alerta inteligente atualizado.</returns>
+    /// <response code="200">Alerta marcado como visualizado.</response>
+    /// <response code="404">Alerta inteligente não encontrado.</response>
     [HttpPut("{id:guid}/visualizar")]
     [ProducesResponseType(typeof(AlertaInteligenteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -177,6 +212,10 @@ public class AlertaInteligenteController : ControllerBase
     /// <summary>
     /// Marca um alerta inteligente como resolvido.
     /// </summary>
+    /// <param name="id">Identificador único do alerta inteligente.</param>
+    /// <returns>Alerta inteligente atualizado.</returns>
+    /// <response code="200">Alerta marcado como resolvido.</response>
+    /// <response code="404">Alerta inteligente não encontrado.</response>
     [HttpPut("{id:guid}/resolver")]
     [ProducesResponseType(typeof(AlertaInteligenteResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -197,6 +236,9 @@ public class AlertaInteligenteController : ControllerBase
     /// <summary>
     /// Remove um alerta inteligente pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do alerta inteligente.</param>
+    /// <response code="204">Alerta inteligente removido com sucesso.</response>
+    /// <response code="404">Alerta inteligente não encontrado.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

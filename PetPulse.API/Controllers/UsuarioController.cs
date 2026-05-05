@@ -10,7 +10,7 @@ namespace PetPulse.Controllers;
 /// </summary>
 /// <remarks>
 /// Base URL: /api/usuario
-/// Exemplo: http://localhost:5000/api/usuario
+/// Exemplo: http://localhost:5292/api/usuario
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]

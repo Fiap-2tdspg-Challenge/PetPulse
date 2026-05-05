@@ -10,7 +10,7 @@ namespace PetPulse.Controllers;
 /// </summary>
 /// <remarks>
 /// Base URL: /api/pet
-/// Exemplo: http://localhost:5000/api/pet
+/// Exemplo: http://localhost:5292/api/pet
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
@@ -31,6 +31,8 @@ public class PetController : ControllerBase
     /// <summary>
     /// Lista todos os pets cadastrados.
     /// </summary>
+    /// <returns>Lista de pets cadastrados.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<PetResponse>), StatusCodes.Status200OK)]
     public IActionResult GetAll()
@@ -46,6 +48,10 @@ public class PetController : ControllerBase
     /// <summary>
     /// Busca um pet pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do pet.</param>
+    /// <returns>Pet encontrado.</returns>
+    /// <response code="200">Pet encontrado com sucesso.</response>
+    /// <response code="404">Pet não encontrado.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PetResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -62,6 +68,10 @@ public class PetController : ControllerBase
     /// <summary>
     /// Lista todos os pets vinculados a um usuário/tutor.
     /// </summary>
+    /// <param name="usuarioId">Identificador único do usuário/tutor.</param>
+    /// <returns>Lista de pets do usuário informado.</returns>
+    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <response code="404">Usuário não encontrado.</response>
     [HttpGet("usuario/{usuarioId:guid}")]
     [ProducesResponseType(typeof(IReadOnlyList<PetResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -81,6 +91,11 @@ public class PetController : ControllerBase
     /// <summary>
     /// Cria um novo pet.
     /// </summary>
+    /// <param name="request">Dados necessários para criação do pet.</param>
+    /// <returns>Pet criado.</returns>
+    /// <response code="201">Pet criado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Usuário informado não encontrado.</response>
     [HttpPost]
     [ProducesResponseType(typeof(PetResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -109,6 +124,12 @@ public class PetController : ControllerBase
     /// <summary>
     /// Atualiza os dados de um pet existente.
     /// </summary>
+    /// <param name="id">Identificador único do pet.</param>
+    /// <param name="request">Novos dados do pet.</param>
+    /// <returns>Pet atualizado.</returns>
+    /// <response code="200">Pet atualizado com sucesso.</response>
+    /// <response code="400">Dados inválidos.</response>
+    /// <response code="404">Pet ou usuário não encontrado.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(PetResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -145,6 +166,9 @@ public class PetController : ControllerBase
     /// <summary>
     /// Remove um pet pelo identificador único.
     /// </summary>
+    /// <param name="id">Identificador único do pet.</param>
+    /// <response code="204">Pet removido com sucesso.</response>
+    /// <response code="404">Pet não encontrado.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
