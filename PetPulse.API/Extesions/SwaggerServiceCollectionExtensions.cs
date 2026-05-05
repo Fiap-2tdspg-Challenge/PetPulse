@@ -22,9 +22,36 @@ public static class SwaggerServiceCollectionExtensions
         {
             options.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title = configuration.GetSection("Swagger:Title").Value,
-                Version = "v1",
-                Description = "API para acompanhamento preventivo da saúde de pets, cadastro de tutores, histórico clínico, dispositivos IoT e alertas inteligentes."
+                Title = configuration.GetSection("Swagger:Title").Value ?? "PetPulse API",
+                Version = configuration.GetSection("Swagger:Version").Value ?? "v1",
+                Description = configuration.GetSection("Swagger:Description").Value
+                              ?? "API para acompanhamento preventivo da saúde de pets."
+            });
+
+            options.OrderActionsBy(apiDesc =>
+            {
+                var controller = apiDesc.ActionDescriptor.RouteValues["controller"];
+
+                var controllerOrder = controller switch
+                {
+                    "Usuario" => "01",
+                    "Pet" => "02",
+                    "HistoricoClinico" => "03",
+                    "DispositivoIot" => "04",
+                    "AlertaInteligente" => "05",
+                    _ => "99"
+                };
+
+                var methodOrder = apiDesc.HttpMethod switch
+                {
+                    "GET" => "01",
+                    "POST" => "02",
+                    "PUT" => "03",
+                    "DELETE" => "04",
+                    _ => "99"
+                };
+
+                return $"{controllerOrder}_{methodOrder}_{apiDesc.RelativePath}";
             });
 
             var xml = Path.Combine(
@@ -35,7 +62,6 @@ public static class SwaggerServiceCollectionExtensions
             if (File.Exists(xml))
                 options.IncludeXmlComments(xml, includeControllerXmlComments: true);
         });
-
         return services;
     }
 }
