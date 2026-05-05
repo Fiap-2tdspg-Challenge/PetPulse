@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\PetPulse.Domain\PetPulse.Domain.csproj" />
+    </ItemGroup>
+
 </Project>

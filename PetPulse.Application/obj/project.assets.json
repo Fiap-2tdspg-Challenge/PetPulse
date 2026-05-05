@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {}
+    "net10.0": {
+      "PetPulse.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "compile": {
+          "bin/placeholder/PetPulse.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/PetPulse.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "PetPulse.Domain/1.0.0": {
+      "type": "project",
+      "path": "../PetPulse.Domain/PetPulse.Domain.csproj",
+      "msbuildProject": "../PetPulse.Domain/PetPulse.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0": []
+    "net10.0": [
+      "PetPulse.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\": {}
@@ -31,7 +50,11 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.Domain\\PetPulse.Domain.csproj": {
+              "projectPath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.Domain\\PetPulse.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

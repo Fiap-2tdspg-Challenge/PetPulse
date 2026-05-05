@@ -6,11 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <Folder Include="Commom\" />
-      <Folder Include="entites\" />
-      <Folder Include="Enum\" />
-      <Folder Include="Helpers\" />
-    </ItemGroup>
-
 </Project>

@@ -12,6 +12,16 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Oracle.EntityFrameworkCore" Version="10.23.26200" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\PetPulse.Application\PetPulse.Application.csproj" />
+      <ProjectReference Include="..\PetPulse.Domain\PetPulse.Domain.csproj" />
     </ItemGroup>
 
 </Project>
