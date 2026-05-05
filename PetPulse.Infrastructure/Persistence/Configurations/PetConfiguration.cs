@@ -1,4 +1,5 @@
-﻿using PetPulse.Domain.entites;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Infrastructure.Persistence.Configurations;
 
@@ -14,6 +15,11 @@ public class PetConfiguration : IEntityTypeConfiguration<Pet>
 {
     public void Configure(EntityTypeBuilder<Pet> builder)
     {
+        var boolToNumberConverter = new ValueConverter<bool, int>(
+            valor => valor ? 1 : 0,
+            valor => valor == 1
+        );
+        
         builder.ToTable("PP_Pets");
 
         builder.HasKey(pet => pet.Id);
@@ -55,8 +61,9 @@ public class PetConfiguration : IEntityTypeConfiguration<Pet>
         builder.Property(pet => pet.Castrado)
             .HasColumnName("CASTRADO")
             .HasColumnType("NUMBER(1)")
-            .HasConversion<int>()
+            .HasConversion(boolToNumberConverter)
             .IsRequired();
+
         
         builder.Property(pet => pet.Porte)
             .HasColumnName("PORTE")
@@ -70,7 +77,7 @@ public class PetConfiguration : IEntityTypeConfiguration<Pet>
         builder.Property(pet => pet.Active)
             .HasColumnName("ATIVO")
             .HasColumnType("NUMBER(1)")
-            .HasConversion<int>()
+            .HasConversion(boolToNumberConverter)
             .IsRequired();
 
         builder.HasOne(pet => pet.Usuario)

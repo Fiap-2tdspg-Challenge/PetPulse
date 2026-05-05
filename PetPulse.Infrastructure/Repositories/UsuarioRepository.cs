@@ -5,9 +5,6 @@ using PetPulse.Infrastructure.Persistence;
 
 namespace PetPulse.Infrastructure.Repositories;
 
-/// <summary>
-/// Implementação EF Core de <see cref="IUsuarioRepository"/>.
-/// </summary>
 public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioRepository
 {
     public IReadOnlyList<Usuario> GetAll()
@@ -59,7 +56,11 @@ public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioReposit
 
     public bool ExistsById(Guid id)
     {
-        return context.Usuarios.Any(usuario => usuario.Id == id);
+        var entity = context.Usuarios
+            .AsNoTracking()
+            .FirstOrDefault(usuario => usuario.Id == id);
+
+        return entity is not null;
     }
 
     public bool ExistsByEmail(string email)
@@ -69,7 +70,11 @@ public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioReposit
 
         var normalizedEmail = email.Trim().ToLowerInvariant();
 
-        return context.Usuarios.Any(usuario => usuario.Email.ToLower() == normalizedEmail);
+        var entity = context.Usuarios
+            .AsNoTracking()
+            .FirstOrDefault(usuario => usuario.Email.ToLower() == normalizedEmail);
+
+        return entity is not null;
     }
 
     public bool ExistsByCpf(string cpf)
@@ -79,6 +84,10 @@ public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioReposit
 
         var normalizedCpf = cpf.Trim();
 
-        return context.Usuarios.Any(usuario => usuario.Cpf == normalizedCpf);
+        var entity = context.Usuarios
+            .AsNoTracking()
+            .FirstOrDefault(usuario => usuario.Cpf == normalizedCpf);
+
+        return entity is not null;
     }
 }

@@ -7,11 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPetPulseDbContext(builder.Configuration);
 
-builder.Services.AddDbContext<PetPulseContext>(options =>
-{
-    options.UseOracle(builder.Configuration.GetConnectionString("PetPulseOracle"));
-});
-
 builder.Services.AddPetPulseRepositories();
 
 builder.Services.addPetPulseSwagger(builder.Configuration);
