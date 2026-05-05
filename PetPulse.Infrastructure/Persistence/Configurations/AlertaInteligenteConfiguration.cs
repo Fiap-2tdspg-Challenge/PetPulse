@@ -11,7 +11,7 @@ public class AlertaInteligenteConfiguration : IEntityTypeConfiguration<AlertaInt
 {
     public void Configure(EntityTypeBuilder<AlertaInteligente> builder)
     {
-        builder.ToTable("T_CLY_ALERTA_INTELIGENTE");
+        builder.ToTable("PP_AlertasInteligentes");
 
         builder.HasKey(alerta => alerta.Id);
 
@@ -62,6 +62,8 @@ public class AlertaInteligenteConfiguration : IEntityTypeConfiguration<AlertaInt
 
         builder.Property(alerta => alerta.Active)
             .HasColumnName("ATIVO")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.HasOne(alerta => alerta.Pet)

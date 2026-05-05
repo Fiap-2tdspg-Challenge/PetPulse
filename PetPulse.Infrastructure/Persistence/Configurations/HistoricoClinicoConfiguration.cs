@@ -57,8 +57,10 @@ public class HistoricoClinicoConfiguration : IEntityTypeConfiguration<HistoricoC
 
         builder.Property(historico => historico.Active)
             .HasColumnName("ATIVO")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
-
+        
         builder.HasOne(historico => historico.Pet)
             .WithMany(pet => pet.HistoricosClinicos)
             .HasForeignKey(historico => historico.PetId);

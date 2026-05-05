@@ -1,9 +1,16 @@
+using Microsoft.EntityFrameworkCore;
 using PetPulse.Extesions;
+using PetPulse.Infrastructure.Persistence;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPetPulseDbContext(builder.Configuration);
+
+builder.Services.AddDbContext<PetPulseContext>(options =>
+{
+    options.UseOracle(builder.Configuration.GetConnectionString("PetPulseOracle"));
+});
 
 builder.Services.AddPetPulseRepositories();
 

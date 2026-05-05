@@ -54,8 +54,10 @@ public class PetConfiguration : IEntityTypeConfiguration<Pet>
 
         builder.Property(pet => pet.Castrado)
             .HasColumnName("CASTRADO")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
-
+        
         builder.Property(pet => pet.Porte)
             .HasColumnName("PORTE")
             .IsRequired()
@@ -67,6 +69,8 @@ public class PetConfiguration : IEntityTypeConfiguration<Pet>
 
         builder.Property(pet => pet.Active)
             .HasColumnName("ATIVO")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.HasOne(pet => pet.Usuario)

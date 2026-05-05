@@ -53,6 +53,8 @@ public class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
 
         builder.Property(usuario => usuario.Active)
             .HasColumnName("ATIVO")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.HasIndex(usuario => usuario.Cpf)

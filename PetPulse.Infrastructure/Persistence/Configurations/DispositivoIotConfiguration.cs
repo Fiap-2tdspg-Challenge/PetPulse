@@ -14,7 +14,7 @@ public class DispositivoIotConfiguration : IEntityTypeConfiguration<DispositivoI
 {
     public void Configure(EntityTypeBuilder<DispositivoIot> builder)
     {
-        builder.ToTable("T_CLY_DISPOSITIVO_IOT");
+        builder.ToTable("PP_DispositivoIots");
 
         builder.HasKey(dispositivo => dispositivo.Id);
 
@@ -58,6 +58,8 @@ public class DispositivoIotConfiguration : IEntityTypeConfiguration<DispositivoI
 
         builder.Property(dispositivo => dispositivo.Active)
             .HasColumnName("ATIVO")
+            .HasColumnType("NUMBER(1)")
+            .HasConversion<int>()
             .IsRequired();
 
         builder.HasIndex(dispositivo => dispositivo.PetId)
