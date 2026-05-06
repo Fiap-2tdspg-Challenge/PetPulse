@@ -529,15 +529,12 @@ Substitua `PET_ID` pelo ID retornado pela API.
 
 ```text
 tipoAlerta:
-1 = Agua
-2 = Alimentacao
-3 = Atividade
-4 = Vacina
-5 = Medicamento
-6 = CheckUp
-7 = Comportamento
-8 = FrequenciaCardiaca
-9 = Pressao
+1 = Atividade
+2 = Vacina
+3 = Medicamento
+4 = CheckUp
+5 = FrequenciaCardiaca
+6 = Pressao
 
 nivelRisco:
 1 = Baixo
