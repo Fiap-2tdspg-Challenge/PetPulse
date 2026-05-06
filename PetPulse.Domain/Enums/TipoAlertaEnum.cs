@@ -2,10 +2,10 @@
 
 public enum TipoAlertaEnum
 {
-    Atividade = 3,
-    Vacina = 4,
-    Medicamento = 5,
-    CheckUp = 6,
-    FrequenciaCardiaca = 8,
-    Pressao = 9
+    Atividade = 1,
+    Vacina = 2,
+    Medicamento = 3,
+    CheckUp = 4,
+    FrequenciaCardiaca = 5,
+    Pressao = 6
 }
