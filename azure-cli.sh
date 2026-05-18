@@ -96,7 +96,7 @@ az vm run-command invoke \
   --command-id RunShellScript \
   --scripts "
     cd /home/$ADMIN_USER
-    git clone https://github.com/Fiap-2tdspg-Challenge/PetPulse.git || (cd PetPulse && git pull)
+    git clone https://github.com/PietroWilhelm/PetPulse.git || (cd PetPulse && git pull)
     cd PetPulse
     DOCKERHUB_USER=$DOCKERHUB_USER docker compose up -d
   "
