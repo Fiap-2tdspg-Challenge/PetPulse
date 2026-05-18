@@ -17,15 +17,19 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Aplica migrations automaticamente ao iniciar
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
+    var db = scope.ServiceProvider.GetRequiredService<PetPulseContext>();
+    db.Database.Migrate();
+}
+
+app.UseSwagger();
 
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "PetPulse API v1");
     });
-}
 
 app.UseHttpsRedirection();
 
