@@ -1,0 +1,66 @@
+# =============================================================
+# PetPulse – Challenge FIAP 2026
+# Serviços: Oracle XE 21c + PetPulse API (.NET 10)
+# Uso: docker compose up -d
+# =============================================================
+
+services:
+
+  # -----------------------------------------------------------
+  # Banco de dados Oracle XE 21c (container slim)
+  # -----------------------------------------------------------
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-db
+    environment:
+      ORACLE_PASSWORD: 021006
+      APP_USER: petpulse
+      APP_USER_PASSWORD: petpulse123
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    networks:
+      - challenge_net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 120s
+
+  # -----------------------------------------------------------
+  # PetPulse API – .NET 10
+  # -----------------------------------------------------------
+  petpulse-api:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: pietrowilhelm/challenge-clyvo-vet:latest
+    container_name: petpulse-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__PetPulseOracle=Data Source=oracle-db:1521/XEPDB1;User ID=petpulse;Password=petpulse123;
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    networks:
+      - challenge_net
+    restart: on-failure
+
+# ---------------------------------------------------------------
+# Volume nomeado para persistência dos dados do Oracle
+# ---------------------------------------------------------------
+volumes:
+  oracle_data:
+    name: oracle_data
+
+# ---------------------------------------------------------------
+# Rede interna dos serviços
+# ---------------------------------------------------------------
+networks:
+  challenge_net:
+    name: challenge_net
