@@ -4,6 +4,34 @@
 
 link do swagger: http://localhost:5292/swagger/index.html
 
+---
+
+## Descrição do Projeto
+
+O **PetPulse** é uma plataforma de **saúde preditiva para pets** que combina monitoramento via dispositivos IoT com inteligência de dados clínicos para oferecer acompanhamento preventivo contínuo da saúde animal.
+
+A solução foi desenvolvida como uma **API RESTful em ASP.NET Core**, permitindo que tutores cadastrem seus pets, registrem histórico clínico completo (vacinas, consultas, exames e medicamentos), vinculem coleiras ou dispositivos inteligentes de monitoramento e recebam **alertas automáticos** gerados com base em dados comportamentais, fisiológicos e clínicos do animal.
+
+O sistema é capaz de coletar métricas em tempo real — como frequência cardíaca, nível de atividade e pressão — diretamente do dispositivo IoT vinculado ao pet, cruzar essas informações com o histórico clínico e gerar **alertas inteligentes classificados por nível de risco**, indicando recomendações precisas ao tutor.
+
+A arquitetura segue princípios de **Clean Architecture**, garantindo alta manutenibilidade, escalabilidade e separação clara de responsabilidades entre as camadas de domínio, aplicação, infraestrutura e apresentação. O banco de dados utilizado é o **Oracle**, com gerenciamento de schema via **Entity Framework Core Migrations**.
+
+---
+
+## Benefícios para o Negócio
+
+| Benefício | Descrição |
+|---|---|
+| **Prevenção e redução de custos** | Ao identificar riscos de saúde de forma precoce, a plataforma reduz internações de emergência e tratamentos tardios, que costumam ser significativamente mais caros. |
+| **Fidelização de clientes** | Clínicas veterinárias e pet shops que adotam o PetPulse oferecem um diferencial competitivo, criando um vínculo contínuo com o tutor além da consulta presencial. |
+| **Geração de receita recorrente** | O modelo baseado em dispositivos IoT e planos de monitoramento abre oportunidade para receita por assinatura (SaaS/hardware-as-a-service). |
+| **Dados clínicos centralizados** | O histórico completo do pet em um único sistema elimina retrabalho, perda de informações e melhora a qualidade dos atendimentos veterinários. |
+| **Escalabilidade da solução** | A arquitetura em camadas e o uso de Oracle + EF Core permitem crescimento horizontal da base de usuários e integração com sistemas veterinários existentes. |
+| **Inteligência preditiva** | Os alertas gerados cruzam dados de IoT com histórico clínico, gerando valor real ao tutor e abrindo espaço para evolução com modelos de machine learning. |
+| **Diferenciação no mercado pet** | O mercado pet brasileiro movimenta mais de R$ 60 bilhões por ano. Soluções de tecnologia para saúde animal ainda são escassas, posicionando o PetPulse em um segmento de alto crescimento. |
+
+---
+
 ## Visão geral da solução
 
 O **PetPulse** é uma API RESTful desenvolvida em **ASP.NET Core** para apoiar o projeto de **saúde preditiva pet**. A solução permite cadastrar tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes.
@@ -23,6 +51,8 @@ A API foi construída seguindo uma arquitetura em camadas inspirada em **Clean A
 * EF Core Migrations
 * Swagger / OpenAPI
 * Rider / Visual Studio
+* DockerFile / DockerFileComponse
+* AzureCLI / Microsoft Azure
 
 ---
 
