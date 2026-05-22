@@ -1,8 +1,31 @@
-# PetPulse API - Challenge FIAP 2026
+# PetPulse API — Challenge FIAP 2026
 
-## lembre de rodar a aplicação
+> API RESTful de saúde preditiva para pets, desenvolvida em ASP.NET Core com Oracle Database.
 
-link do swagger: http://localhost:5292/swagger/index.html
+---
+
+## Sumário
+
+- [Descrição do Projeto](#descrição-do-projeto)
+- [Benefícios para o Negócio](#benefícios-para-o-negócio)
+- [Tecnologias utilizadas](#tecnologias-utilizadas)
+- [Arquitetura do projeto](#arquitetura-do-projeto)
+- [Entidades principais](#entidades-principais)
+- [Relacionamentos](#relacionamentos)
+- [Configuração do banco Oracle](#configuração-do-banco-oracle)
+- [Migrations](#migrations)
+- [Como executar](#como-executar)
+- [Portas e serviços](#portas-e-serviços)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Endpoints disponíveis](#endpoints-disponíveis)
+- [Ordem recomendada para testar](#ordem-recomendada-para-testar)
+- [JSONs para teste](#jsons-para-teste)
+- [Testes de consulta](#testes-de-consulta)
+- [Testes de atualização](#testes-de-atualização)
+- [Testes de erro](#testes-de-erro)
+- [Consultas para conferir no Oracle](#consultas-para-conferir-no-oracle)
+- [Códigos HTTP utilizados](#códigos-http-utilizados)
+- [Observações importantes](#observações-importantes)
 
 ---
 
@@ -32,16 +55,6 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 
 ---
 
-## Visão geral da solução
-
-O **PetPulse** é uma API RESTful desenvolvida em **ASP.NET Core** para apoiar o projeto de **saúde preditiva pet**. A solução permite cadastrar tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes.
-
-A proposta do sistema é centralizar informações importantes sobre o animal e permitir o acompanhamento preventivo de sua saúde. No escopo inicial, o sistema permite registrar dados do pet, seu histórico clínico, vincular uma coleira/dispositivo IoT e gerar alertas inteligentes com base em informações de comportamento, saúde e monitoramento.
-
-A API foi construída seguindo uma arquitetura em camadas inspirada em **Clean Architecture**, separando responsabilidades entre domínio, aplicação, infraestrutura e camada de apresentação.
-
----
-
 ## Tecnologias utilizadas
 
 * C#
@@ -51,8 +64,8 @@ A API foi construída seguindo uma arquitetura em camadas inspirada em **Clean A
 * EF Core Migrations
 * Swagger / OpenAPI
 * Rider / Visual Studio
-* DockerFile / DockerFileComponse
-* AzureCLI / Microsoft Azure
+* Docker / Docker Compose
+* Azure CLI / Microsoft Azure
 
 ---
 
@@ -267,21 +280,219 @@ dotnet ef migrations remove --project PetPulse.Infrastructure\PetPulse.Infrastru
 
 ---
 
-## Executando a API
+---
 
-Na raiz da solução, execute:
+## Como executar
+
+### Opção 1 — Localmente com .NET (requer Oracle externo)
+
+Use esta opção se você já tem uma instância Oracle disponível (ex.: Oracle FIAP).
+
+**1. Clone o repositório**
+
+```bash
+git clone https://github.com/PietroWilhelm/PetPulse.git
+cd PetPulse
+```
+
+**2. Configure a connection string**
+
+Edite `PetPulse.API/appsettings.Development.json` com os dados do seu banco:
+
+```json
+{
+  "ConnectionStrings": {
+    "PetPulseOracle": "Data Source=oracle.fiap.com.br:1521/orcl;User ID=SEU_USUARIO;Password=SUA_SENHA;"
+  }
+}
+```
+
+**3. Execute a API**
 
 ```powershell
 dotnet run --project PetPulse.API\PetPulse.API.csproj
 ```
 
-Depois acesse o Swagger no navegador:
+> As migrations são aplicadas automaticamente na inicialização. Não é necessário rodar `dotnet ef database update`.
 
-```text
+**4. Acesse o Swagger**
+
+```
 http://localhost:5292/swagger
 ```
 
-A porta pode variar conforme o ambiente.
+---
+
+## Opção 2 — Localmente com Docker (Oracle incluído)
+
+Use esta opção para rodar tudo localmente sem depender de um banco externo. O Docker sobe o Oracle XE e a API automaticamente.
+
+**Pré-requisito:** Docker Desktop em execução.
+
+**1. Clone o repositório**
+
+```bash
+git clone https://github.com/PietroWilhelm/PetPulse.git
+cd PetPulse
+```
+
+**2. Suba os containers**
+
+```bash
+docker compose up -d
+```
+
+Isso irá:
+- Baixar a imagem `gvenzl/oracle-xe:21-slim` do Docker Hub
+- Baixar a imagem `pietrowilhelm/challenge-clyvo-vet:latest` do Docker Hub
+- Criar o volume `oracle_data` para persistência dos dados
+- Inicializar o Oracle XE (aguarde ~2 minutos para o healthcheck passar)
+- Subir a API na porta `8080`
+
+**3. Verifique se os containers estão saudáveis**
+
+```bash
+docker ps
+```
+
+Aguarde o `oracle-db` aparecer com status `(healthy)` antes de usar a API.
+
+**4. Acesse o Swagger**
+
+```
+http://localhost:8080/swagger
+```
+
+**5. Parar os containers**
+
+```bash
+docker compose down
+```
+
+> Os dados do Oracle ficam salvos no volume `oracle_data`. Para remover os dados também:
+> ```bash
+> docker compose down -v
+> ```
+
+---
+
+## Opção 3 — Deploy na nuvem com Azure VM
+
+Use esta opção para provisionar toda a infraestrutura automaticamente no Microsoft Azure.
+
+**Pré-requisitos:**
+- Conta Azure ativa com permissão para criar recursos
+- Azure CLI instalado e autenticado
+
+**1. Autentique no Azure**
+
+```bash
+az login
+```
+
+**2. Clone o repositório**
+
+```bash
+git clone https://github.com/PietroWilhelm/PetPulse.git
+cd PetPulse
+```
+
+**3. Revise as variáveis do script (opcional)**
+
+Abra `azure-cli.sh` e ajuste conforme necessário:
+
+```bash
+RESOURCE_GROUP="rg-challenge-clyvo-vet"   # Nome do Resource Group
+LOCATION="southafricanorth"               # Região Azure
+VM_NAME="vm-petpulse"                     # Nome da VM
+VM_SIZE="Standard_B4ls_v2"               # Tamanho da VM (4 vCPU, 8 GB RAM)
+ADMIN_USER="petpulseadmin"               # Usuário SSH da VM
+ADMIN_PASSWORD="Fiap@20262026"           # Senha SSH da VM
+DOCKERHUB_USER="pietrowilhelm"           # Usuário do Docker Hub
+IMAGE_TAG="latest"                        # Tag da imagem da API
+```
+
+**4. Execute o script de provisionamento**
+
+```bash
+chmod +x azure-cli.sh
+./azure-cli.sh
+```
+
+O script executa automaticamente os seguintes passos:
+
+| Passo | O que faz |
+|---|---|
+| 1/6 | Cria o Resource Group na região configurada |
+| 2/6 | Provisiona a VM Ubuntu 22.04 com IP público |
+| 3/6 | Abre as portas 22 (SSH), 8080 (API) e 1521 (Oracle) |
+| 4/6 | Instala Docker, Git e Nano na VM |
+| 5/6 | Cria o `docker-compose.yml` na VM e sobe os containers |
+| 6/6 | Exibe o IP público, URL do Swagger e dados de SSH |
+
+> O script leva entre 10 e 15 minutos para concluir.
+
+**5. Aguarde os containers iniciarem**
+
+Após o script terminar, aguarde aproximadamente **4 minutos** para o Oracle XE inicializar completamente.
+
+**6. Acesse a API pelo IP público**
+
+```
+http://IP_PUBLICO:8080/swagger
+```
+
+O IP público é exibido ao final da execução do script.
+
+**7. Verificar containers na VM via SSH**
+
+```bash
+ssh petpulseadmin@IP_PUBLICO
+# Senha: Fiap@20262026
+
+docker ps                          # Listar containers em execução
+docker exec petpulse-api whoami    # Confirmar usuário não-root (appuser)
+docker volume ls                   # Confirmar volume nomeado (oracle_data)
+exit
+```
+
+**8. Deletar a infraestrutura ao final**
+
+> ⚠️ Importante: delete os recursos ao terminar para evitar cobranças.
+
+```bash
+az group delete --name "rg-challenge-clyvo-vet" --yes --no-wait
+```
+
+Confirme a deleção após alguns minutos:
+
+```bash
+az group show --name "rg-challenge-clyvo-vet" --query "properties.provisioningState" --output tsv
+# Se retornar erro "not found", a deleção foi confirmada
+```
+
+---
+
+## Portas e serviços
+
+| Serviço | Porta | URL |
+|---|---|---|
+| PetPulse API | 8080 | `http://HOST:8080/api/...` |
+| Swagger UI | 8080 | `http://HOST:8080/swagger` |
+| Oracle XE | 1521 | `HOST:1521/XEPDB1` |
+
+---
+
+## Variáveis de ambiente
+
+A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-compose.yml` ou no `appsettings.json`:
+
+| Variável | Valor padrão | Descrição |
+|---|---|---|
+| `ConnectionStrings__PetPulseOracle` | _(vazio)_ | Connection string do Oracle |
+| `ASPNETCORE_ENVIRONMENT` | `Development` | Ambiente de execução |
+| `ASPNETCORE_URLS` | `http://+:8080` | URL de escuta da API |
+
 
 ---
 
@@ -362,7 +573,7 @@ Como existem relacionamentos entre as entidades, recomenda-se testar na seguinte
 
 ---
 
-# JSONs para teste
+## JSONs para teste
 
 ## 1. Criar usuário
 
@@ -586,7 +797,7 @@ origemAlerta:
 
 ---
 
-# Testes de consulta
+## Testes de consulta
 
 ## Listar usuários
 
@@ -674,7 +885,7 @@ Status:
 
 ---
 
-# Testes de atualização
+## Testes de atualização
 
 ## Atualizar usuário
 
@@ -798,7 +1009,7 @@ O campo `status` deve retornar como `3`.
 
 ---
 
-# Testes de erro
+## Testes de erro
 
 ## Buscar usuário inexistente
 
@@ -854,7 +1065,7 @@ Resultado esperado:
 
 ---
 
-# Consultas para conferir no Oracle
+## Consultas para conferir no Oracle
 
 Após os testes, é possível conferir os dados diretamente no Oracle:
 
@@ -877,7 +1088,7 @@ ORDER BY table_name;
 
 ---
 
-# Códigos HTTP utilizados
+## Códigos HTTP utilizados
 
 | Código | Significado           | Uso na API                                    |
 | ------ | --------------------- | --------------------------------------------- |
@@ -890,7 +1101,7 @@ ORDER BY table_name;
 
 ---
 
-# Observações importantes
+## Observações importantes
 
 ## GUID e Oracle RAW(16)
 
@@ -906,6 +1117,6 @@ Isso evita valores inválidos e facilita o uso da API pelo Swagger.
 
 ---
 
-# Conclusão
+## Conclusão
 
 A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database e Swagger, atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais.
