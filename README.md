@@ -14,6 +14,7 @@
 - [Relacionamentos](#relacionamentos)
 - [Configuração do banco Oracle](#configuração-do-banco-oracle)
 - [Migrations](#migrations)
+- [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
 - [Como executar](#como-executar)
 - [Portas e serviços](#portas-e-serviços)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
@@ -63,6 +64,9 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 * Oracle Database
 * EF Core Migrations
 * Swagger / OpenAPI
+* Serilog (logging estruturado)
+* OpenTelemetry (tracing e métricas)
+* Microsoft.Extensions.Diagnostics.HealthChecks
 * Rider / Visual Studio
 * Docker / Docker Compose
 * Azure CLI / Microsoft Azure
@@ -278,6 +282,70 @@ dotnet ef database update --project PetPulse.Infrastructure\PetPulse.Infrastruct
 dotnet ef migrations remove --project PetPulse.Infrastructure\PetPulse.Infrastructure.csproj --startup-project PetPulse.API\PetPulse.API.csproj --context PetPulse.Infrastructure.Persistence.PetPulseContext
 ```
 
+## Observabilidade e Monitoramento
+
+A API implementa monitoramento e observabilidade seguindo os requisitos da Sprint 3: Health Checks, logging estruturado e tracing/métricas distribuídas.
+
+### Health Check
+
+```http
+GET /health
+```
+
+Verifica a saúde da API, a conectividade com o banco Oracle e a disponibilidade de um serviço externo. Utiliza `Microsoft.Extensions.Diagnostics.HealthChecks`.
+
+Checks configurados:
+
+| Check | O que verifica |
+|---|---|
+| `PetPulse API` | Self-check simples, confirma que a API está no ar |
+| `Oracle` | Conectividade com o banco via `PetPulseContext` (EF Core) |
+| `FIAP` | Disponibilidade de um serviço HTTP externo |
+
+Exemplo de resposta:
+
+```json
+{
+  "status": "Healthy",
+  "duration": "00:00:00.1234567",
+  "checks": [
+    { "name": "PetPulse API", "status": "Healthy", "description": "API está no ar", "duration": "00:00:00.0000010", "error": null },
+    { "name": "Oracle", "status": "Healthy", "description": null, "duration": "00:00:00.0987654", "error": null },
+    { "name": "FIAP", "status": "Healthy", "description": null, "duration": "00:00:00.0456789", "error": null }
+  ]
+}
+```
+
+Se algum check falhar, o `status` do item correspondente muda para `Unhealthy` e o campo `error` traz a mensagem da exceção.
+
+### Métricas (Prometheus)
+
+```http
+GET /metrics
+```
+
+Endpoint no formato de exposição do Prometheus, gerado pelo OpenTelemetry (`AddPrometheusExporter`). Inclui métricas de ASP.NET Core, HttpClient e runtime — como tempo de resposta por rota e taxa de erros por status code.
+
+### Tracing distribuído (OpenTelemetry)
+
+A aplicação instrumenta automaticamente:
+
+- Requisições HTTP recebidas (`AddAspNetCoreInstrumentation`)
+- Chamadas HTTP de saída (`AddHttpClientInstrumentation`)
+- Consultas ao banco via EF Core (`AddEntityFrameworkCoreInstrumentation`)
+
+Em desenvolvimento, os traces são exportados para o console (`AddConsoleExporter`), permitindo acompanhar uma requisição atravessando as camadas API → Application/Infrastructure → Oracle.
+
+### Logging estruturado (Serilog)
+
+Logs estruturados com Serilog, com dois destinos configurados:
+
+- **Console** — saída formatada em tempo real durante a execução
+- **Arquivo** — `logs/petpulse-AAAAMMDD.log`, um arquivo por dia (`RollingInterval.Day`)
+
+Níveis utilizados: `Information` (fluxo normal), `Warning` (situações não críticas) e `Error` (falhas). Cada linha de log de requisição (`UseSerilogRequestLogging`) é correlacionada com o `TraceId`/`SpanId` da requisição via `Serilog.Enrichers.Span`, permitindo cruzar um log específico com o trace distribuído correspondente.
+
+
 ---
 
 ---
@@ -315,10 +383,12 @@ dotnet run --project PetPulse.API\PetPulse.API.csproj
 
 > As migrations são aplicadas automaticamente na inicialização. Não é necessário rodar `dotnet ef database update`.
 
-**4. Acesse o Swagger**
+**4. Acesse o Swagger e o restante da aplicação**
 
 ```
 http://localhost:5292/swagger
+http://localhost:5292/metrics
+http://localhost:5292/health
 ```
 
 ---
@@ -554,7 +624,6 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 | PUT    | `/api/AlertaInteligente/{id}/visualizar` | Marca alerta como visualizado |
 | PUT    | `/api/AlertaInteligente/{id}/resolver`   | Marca alerta como resolvido   |
 | DELETE | `/api/AlertaInteligente/{id}`            | Remove alerta inteligente     |
-
 ---
 
 ## Ordem recomendada para testar
@@ -1119,4 +1188,4 @@ Isso evita valores inválidos e facilita o uso da API pelo Swagger.
 
 ## Conclusão
 
-A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database e Swagger, atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais.
+A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database, Swagger, Serilog e OpenTelemetry (Health Checks, logging estruturado, tracing e métricas), atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais.
