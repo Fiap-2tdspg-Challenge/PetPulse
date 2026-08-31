@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PetPulse.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e181210e9380e5c202a501d1d401fc1bce2eea13")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+78b69b22ecf66f5dfdf6a8c5e25f14d0bff45925")]
 [assembly: System.Reflection.AssemblyProductAttribute("PetPulse.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PetPulse.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
