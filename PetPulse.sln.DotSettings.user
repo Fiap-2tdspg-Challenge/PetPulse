@@ -4,18 +4,4 @@
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
   &lt;Assembly Path="C:\Users\OpenTech_PS\.nuget\packages\microsoft.entityframeworkcore\10.0.7\lib\net10.0\Microsoft.EntityFrameworkCore.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=6e596079_002Da59f_002D43bc_002Db7ec_002Db3856895a11d/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CriarDispositivo_ComDadosValidos_DeveCriarDispositivo" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;xUnit::0EEB0054-497F-401D-9C82-598E86039D2E::net10.0::PetPulse.Domain.Tests.DispositivoIotTests.CriarDispositivo_ComDadosValidos_DeveCriarDispositivo&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::0EEB0054-497F-401D-9C82-598E86039D2E::net10.0::PetPulse.Domain.Tests.DispositivoIotTests.AtualizarLeitura_ComFrequenciaCardiacaZero_DeveLancarException&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::0EEB0054-497F-401D-9C82-598E86039D2E::net10.0::PetPulse.Domain.Tests.DispositivoIotTests.AtualizarLeitura_ComNivelAtividadeNegativo_DeveLancarException&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::0EEB0054-497F-401D-9C82-598E86039D2E::net10.0::PetPulse.Domain.Tests.DispositivoIotTests.AlterarStatus_DeveAtualizarStatusDoDispositivo&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CFAA7387-2303-4B3B-B165-0DB4208A3B23::net10.0::PetPulse.API.Tests.Controllers.PetControllerTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CF372196-4E6E-4F16-BCEA-8634BCA62B18::net10.0::PetPulse.Infrastructure.Tests.Repositories.PetRepositoryTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CFAA7387-2303-4B3B-B165-0DB4208A3B23::net10.0::PetPulse.API.Tests.Controllers.AlertaInteligenteControllerTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CF372196-4E6E-4F16-BCEA-8634BCA62B18::net10.0::PetPulse.Infrastructure.Tests.Repositories.HistoricoClinicoRepositoryTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CF372196-4E6E-4F16-BCEA-8634BCA62B18::net10.0::PetPulse.Infrastructure.Tests.Repositories.UsuarioRepositoryTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CF372196-4E6E-4F16-BCEA-8634BCA62B18::net10.0::PetPulse.Infrastructure.Tests.Repositories.DispositivoIotRepositoryTests&lt;/TestId&gt;&#xD;
-    &lt;TestId&gt;xUnit::CF372196-4E6E-4F16-BCEA-8634BCA62B18::net10.0::PetPulse.Infrastructure.Tests.Repositories.AlertaInteligenteRepositoryTests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
+	</wpf:ResourceDictionary>
