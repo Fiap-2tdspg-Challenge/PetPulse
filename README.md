@@ -15,6 +15,7 @@
 - [Configuração do banco Oracle](#configuração-do-banco-oracle)
 - [Migrations](#migrations)
 - [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
+- [Testes automatizados](#testes-automatizados)
 - [Como executar](#como-executar)
 - [Portas e serviços](#portas-e-serviços)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
@@ -67,6 +68,8 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 * Serilog (logging estruturado)
 * OpenTelemetry (tracing e métricas)
 * Microsoft.Extensions.Diagnostics.HealthChecks
+* xUnit / Moq (testes automatizados)
+* Microsoft.EntityFrameworkCore.InMemory (testes de repositório)
 * Rider / Visual Studio
 * Docker / Docker Compose
 * Azure CLI / Microsoft Azure
@@ -75,14 +78,17 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 
 ## Arquitetura do projeto
 
-A solução foi organizada em quatro projetos principais:
+A solução foi organizada em quatro projetos principais (mais os projetos de teste correspondentes):
 
 ```text
 PetPulse
 ├── PetPulse.API
 ├── PetPulse.Application
 ├── PetPulse.Domain
-└── PetPulse.Infrastructure
+├── PetPulse.Infrastructure
+├── PetPulse.API.Tests
+├── PetPulse.Domain.Tests
+└── PetPulse.Infrastructure.Tests
 ```
 
 ### PetPulse.API
@@ -345,8 +351,35 @@ Logs estruturados com Serilog, com dois destinos configurados:
 
 Níveis utilizados: `Information` (fluxo normal), `Warning` (situações não críticas) e `Error` (falhas). Cada linha de log de requisição (`UseSerilogRequestLogging`) é correlacionada com o `TraceId`/`SpanId` da requisição via `Serilog.Enrichers.Span`, permitindo cruzar um log específico com o trace distribuído correspondente.
 
-
 ---
+
+## Testes automatizados
+
+A solução conta com testes automatizados em **xUnit**, organizados por camada e espelhando a própria Clean Architecture do projeto. Cada projeto de produção tem seu par de testes:
+
+| Projeto de teste | Camada testada | O que cobre |
+|---|---|---|
+| `PetPulse.Domain.Tests` | Domínio | Regras de negócio das entidades `Usuario`, `Pet`, `HistoricoClinico`, `DispositivoIot` e `AlertaInteligente` — construção, validações de guarda (ex.: nome vazio, peso negativo, data futura) e os métodos `AtualizarDados` de cada entidade |
+| `PetPulse.API.Tests` | API / Controllers | Os 5 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`), com os repositórios isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`) |
+| `PetPulse.Infrastructure.Tests` | Infraestrutura | As implementações EF Core dos 5 repositórios (`PetRepository`, `UsuarioRepository`, `HistoricoClinicoRepository`, `DispositivoIotRepository`, `AlertaInteligenteRepository`), usando `Microsoft.EntityFrameworkCore.InMemory`. Cobre persistência (`Add`/`Update`/`Delete`), buscas por relacionamento (ex.: pets de um usuário, histórico de um pet) e regras como a checagem case-insensitive de e-mail |
+
+### Executando os testes
+
+Rodar toda a suíte:
+
+```powershell
+dotnet test
+```
+
+Rodar um projeto de teste específico:
+
+```powershell
+dotnet test PetPulse.Domain.Tests\PetPulse.Domain.Tests.csproj
+dotnet test PetPulse.API.Tests\PetPulse.API.Tests.csproj
+dotnet test PetPulse.Infrastructure.Tests\PetPulse.Infrastructure.Tests.csproj
+```
+
+> Convenção de nomenclatura dos testes: `MetodoTestado_Cenario_ResultadoEsperado` (ex.: `Create_ComEmailJaCadastrado_DeveRetornarBadRequestENaoPersistir`), seguindo o padrão AAA (Arrange/Act/Assert).
 
 ---
 
@@ -603,7 +636,7 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 ### Dispositivo IoT
 
 | Método | Endpoint                          | Descrição                   |
-| ------ | --------------------------------- | --------------------------- |
+| ------ | --------------------------------- | ---------------------------- |
 | GET    | `/api/DispositivoIot`             | Lista todos os dispositivos |
 | GET    | `/api/DispositivoIot/{id}`        | Busca dispositivo por ID    |
 | GET    | `/api/DispositivoIot/pet/{petId}` | Busca dispositivo de um pet |
@@ -614,7 +647,7 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 ### Alerta Inteligente
 
 | Método | Endpoint                                 | Descrição                     |
-| ------ | ---------------------------------------- | ----------------------------- |
+| ------ | ----------------------------------------- | ------------------------------ |
 | GET    | `/api/AlertaInteligente`                 | Lista todos os alertas        |
 | GET    | `/api/AlertaInteligente/{id}`            | Busca alerta por ID           |
 | GET    | `/api/AlertaInteligente/pet/{petId}`     | Lista alertas de um pet       |
@@ -1160,7 +1193,7 @@ ORDER BY table_name;
 ## Códigos HTTP utilizados
 
 | Código | Significado           | Uso na API                                    |
-| ------ | --------------------- | --------------------------------------------- |
+| ------ | ---------------------- | --------------------------------------------- |
 | 200    | OK                    | Consulta ou atualização realizada com sucesso |
 | 201    | Created               | Registro criado com sucesso                   |
 | 204    | No Content            | Registro removido com sucesso                 |
@@ -1188,4 +1221,4 @@ Isso evita valores inválidos e facilita o uso da API pelo Swagger.
 
 ## Conclusão
 
-A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database, Swagger, Serilog e OpenTelemetry (Health Checks, logging estruturado, tracing e métricas), atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais.
+A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database, Swagger, Serilog e OpenTelemetry (Health Checks, logging estruturado, tracing e métricas), atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais. A cobertura de testes automatizados (xUnit) nas camadas de Domínio, API e Infraestrutura reforça a confiabilidade das regras de negócio e da persistência de dados.
