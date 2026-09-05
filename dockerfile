@@ -9,16 +9,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copia os arquivos de projeto para cache de layers do restore
-COPY PetPulse.sln ./
+# Copia apenas os arquivos de projeto de PRODUÇÃO para cache de layers do restore
+# (os projetos de teste ficam de fora do build de imagem — não são necessários em runtime
+# e não estão presentes neste estágio, então não podem constar do restore)
 COPY PetPulse.API/PetPulse.API.csproj             PetPulse.API/
 COPY PetPulse.Application/PetPulse.Application.csproj   PetPulse.Application/
 COPY PetPulse.Domain/PetPulse.Domain.csproj         PetPulse.Domain/
 COPY PetPulse.Infrastructure/PetPulse.Infrastructure.csproj PetPulse.Infrastructure/
 
-RUN dotnet restore
+RUN dotnet restore PetPulse.API/PetPulse.API.csproj
 
-# Copia o restante do código-fonte
+# Copia o restante do código-fonte (o .dockerignore já exclui testes, bin/obj, .git etc.)
 COPY . .
 
 # Publica a API em modo Release

@@ -1,0 +1,23 @@
+# Controle de versão
+.git
+.gitignore
+.idea
+.vs
+
+# Artefatos de build (.NET)
+**/bin/
+**/obj/
+
+# Projetos de teste — não fazem parte da imagem de runtime
+PetPulse.Domain.Tests/
+PetPulse.API.Tests/
+PetPulse.Infrastructure.Tests/
+
+# Logs e arquivos locais
+logs/
+*.log
+
+# Scripts e docs que não precisam entrar no contexto da imagem
+azure-cli.sh
+README.md
+docker-compose.yml

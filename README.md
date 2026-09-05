@@ -17,6 +17,7 @@
 - [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
 - [Testes automatizados](#testes-automatizados)
 - [Como executar](#como-executar)
+- [Deploy em Nuvem (ACR + ACI + Key Vault)](#deploy-em-nuvem-acr--aci--key-vault)
 - [Portas e serviços](#portas-e-serviços)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Endpoints disponíveis](#endpoints-disponíveis)
@@ -73,6 +74,7 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 * Rider / Visual Studio
 * Docker / Docker Compose
 * Azure CLI / Microsoft Azure
+* Azure Container Registry (ACR) / Azure Container Instances (ACI)
 
 ---
 
@@ -476,102 +478,172 @@ docker compose down
 > ```bash
 > docker compose down -v
 > ```
-
 ---
 
-## Opção 3 — Deploy na nuvem com Azure VM
+## Deploy em Nuvem (ACR + ACI + Key Vault)
 
-Use esta opção para provisionar toda a infraestrutura automaticamente no Microsoft Azure.
+Além das opções locais (Opção 1), Docker Compose (Opção 2) e VM no Azure (Opção 3), a API também pode ser publicada de forma **serverless** no Azure — 100% containerizada, tanto a API quanto o banco Oracle, sem misturar com nenhum serviço PaaS (banco gerenciado), conforme exigido pela documentação do Challenge. A arquitetura usa três serviços:
 
-**Pré-requisitos:**
-- Conta Azure ativa com permissão para criar recursos
-- Azure CLI instalado e autenticado
+- **Azure Container Registry (ACR)** — guarda a imagem Docker da API.
+- **Azure Container Instances (ACI)** — dois containers independentes, cada um com seu próprio FQDN público: um para a API e outro para o banco Oracle (`gvenzl/oracle-xe`, a mesma imagem usada localmente no `docker-compose.yml`).
+- **Azure Key Vault** — guarda todas as senhas e credenciais (senha do Oracle, senha do usuário da aplicação, usuário/senha do ACR). Nenhuma credencial fica em texto puro no script, no container ou no repositório.
 
-**1. Autentique no Azure**
+> O Oracle roda **sem persistência em disco** (sem Azure File Share/volume) — de propósito. O Oracle XE não tolera bem um shutdown "sujo" quando os dados estão em um volume persistido (gera `ORA-01081: cannot start already-running ORACLE`), então trocamos persistência por simplicidade e confiabilidade. Isso está dentro da regra do Challenge, que exige o banco **containerizado**, mas não exige persistência entre reinícios. Se o container do Oracle for recriado, basta rodar o `script_bd.sql` de novo (veja a seção abaixo).
 
-```bash
-az login
+### Fluxo
+
+```text
+Docker Hub (imagem já publicada) → docker pull/tag/push → Azure Container Registry (ACR)
+                                                                     │
+                                                                     ▼
+Azure Key Vault (senhas/credenciais) ──────────► Azure Container Instance – API (petpulse-api)
+                                       └────────► Azure Container Instance – Oracle (petpulse-oracle-db)
 ```
 
-**2. Clone o repositório**
+A imagem da API usada é a mesma publicada no Docker Hub (`pietrowilhelm/challenge-clyvo-vet:latest`, gerada a partir do `dockerfile` na raiz do projeto). O script `azure-cli.sh` automatiza todo o processo: cria o Resource Group, o ACR, o Key Vault, sobe os dois containers (Oracle e API) e conecta tudo.
+
+
+
+### Clone o repositório
 
 ```bash
 git clone https://github.com/PietroWilhelm/PetPulse.git
 cd PetPulse
 ```
 
-**3. Revise as variáveis do script (opcional)**
+### Pré-requisitos
 
-Abra `azure-cli.sh` e ajuste conforme necessário:
+- Azure CLI instalado e autenticado (`az login`)
+- Docker Desktop **aberto** (necessário para `docker pull`/`tag`/`push` no ACR)
+- Duas senhas exportadas como variável de ambiente **antes** de rodar o script — nunca deixe senhas escritas no script ou no código-fonte; elas só existem no shell local e são gravadas diretamente no Key Vault:
 
 ```bash
-RESOURCE_GROUP="rg-challenge-clyvo-vet"   # Nome do Resource Group
-LOCATION="southafricanorth"               # Região Azure
-VM_NAME="vm-petpulse"                     # Nome da VM
-VM_SIZE="Standard_B4ls_v2"               # Tamanho da VM (4 vCPU, 8 GB RAM)
-ADMIN_USER="petpulseadmin"               # Usuário SSH da VM
-ADMIN_PASSWORD="Fiap@20262026"           # Senha SSH da VM
-DOCKERHUB_USER="pietrowilhelm"           # Usuário do Docker Hub
-IMAGE_TAG="latest"                        # Tag da imagem da API
+export ORACLE_PASSWORD='senha_do_usuario_sys_do_oracle'
+export ORACLE_APP_PASSWORD='senha_do_usuario_petpulse_no_oracle'
 ```
 
-**4. Execute o script de provisionamento**
+- No Git Bash (Windows), exporte também a variável abaixo antes de rodar o script, para evitar que o Git Bash reescreva argumentos como `/subscriptions/...` como se fossem caminhos do Windows:
+
+```bash
+export MSYS_NO_PATHCONV=1
+```
+
+### Executando o deploy
 
 ```bash
 chmod +x azure-cli.sh
 ./azure-cli.sh
 ```
 
-O script executa automaticamente os seguintes passos:
+O script é idempotente — pode ser executado mais de uma vez sem recriar recursos já existentes — e faz, na ordem:
 
 | Passo | O que faz |
 |---|---|
-| 1/6 | Cria o Resource Group na região configurada |
-| 2/6 | Provisiona a VM Ubuntu 22.04 com IP público |
-| 3/6 | Abre as portas 22 (SSH), 8080 (API) e 1521 (Oracle) |
-| 4/6 | Instala Docker, Git e Nano na VM |
-| 5/6 | Cria o `docker-compose.yml` na VM e sobe os containers |
-| 6/6 | Exibe o IP público, URL do Swagger e dados de SSH |
+| 1 | Reaproveita o Resource Group `rg-challenge-clyvo-vet` (cria se não existir) |
+| 2 | Registra os providers `Microsoft.ContainerRegistry`, `Microsoft.ContainerInstance` e `Microsoft.KeyVault` na assinatura (necessário ao menos uma vez; em assinaturas Azure para Estudantes eles geralmente não vêm habilitados por padrão) |
+| 3 | Cria o Azure Container Registry `petpulse` (SKU Basic) e recupera `loginServer` + credenciais |
+| 4 | Faz login no ACR, puxa a imagem do Docker Hub, retagueia como `petpulse.azurecr.io/petpulse-api:v1` e sobe (push) |
+| 5 | Cria o Key Vault `petpulse-kv`, concede à sua conta o papel **Key Vault Administrator** (com espera automática pela propagação do RBAC) e grava os segredos `oracle-password`, `oracle-app-password`, `acr-username`, `acr-password` |
+| 6 | Recria do zero a ACI do Oracle (`petpulse-oracle-db`, sem volume), lendo a senha diretamente do Key Vault como `--secure-environment-variables` |
+| 7 | Aguarda o Oracle sinalizar `DATABASE IS READY TO USE` nos logs (poll a cada 15s, até 15 minutos) em vez de um `sleep` fixo |
+| 8 | Recria do zero a ACI da API (`petpulse-api`), lendo credenciais do ACR e a connection string do Oracle do Key Vault, também como `--secure-environment-variables` |
 
-> O script leva entre 10 e 15 minutos para concluir.
+Todas as senhas usadas na criação dos containers (`ORACLE_PASSWORD`, `APP_USER_PASSWORD`, `ConnectionStrings__PetPulseOracle`, credenciais do ACR) são passadas como **secure environment variables** (`--secure-environment-variables`), que a Azure mantém criptografadas e não expõe em `az container show` — nunca em texto puro.
 
-**5. Aguarde os containers iniciarem**
+### Acessando a API na nuvem
 
-Após o script terminar, aguarde aproximadamente **4 minutos** para o Oracle XE inicializar completamente.
-
-**6. Acesse a API pelo IP público**
+Ao final da execução, o script imprime os FQDNs gerados (API e Oracle) e os endpoints de observabilidade:
 
 ```
-http://IP_PUBLICO:8080/swagger
+http://<API_FQDN>:8080/swagger
+http://<API_FQDN>:8080/health
+http://<API_FQDN>:8080/metrics
 ```
 
-O IP público é exibido ao final da execução do script.
+### Aplicando o script_bd.sql no Oracle da nuvem
 
-**7. Verificar containers na VM via SSH**
+Como o container do Oracle não usa volume persistente, sempre que ele for (re)criado é preciso rodar o `script_bd.sql` de novo para criar as tabelas. Há duas formas de fazer isso; ambas usam apenas ferramentas já disponíveis (Azure CLI/Portal e o `sqlplus` embutido na própria imagem do Oracle).
+
+#### Opção A — direto de dentro do container do Oracle (recomendada)
+
+Não depende do Docker local nem de instalar nada extra — só do `az container exec` (ou do Console do Portal). Funciona porque a imagem `gvenzl/oracle-xe` já vem com o `sqlplus` instalado.
+
+**1. Abra uma sessão dentro do container do Oracle:**
 
 ```bash
-ssh petpulseadmin@IP_PUBLICO
-# Senha: Fiap@20262026
-
-docker ps                          # Listar containers em execução
-docker exec petpulse-api whoami    # Confirmar usuário não-root (appuser)
-docker volume ls                   # Confirmar volume nomeado (oracle_data)
-exit
+az container exec --resource-group rg-challenge-clyvo-vet --name petpulse-oracle-db --exec-command "/bin/bash"
 ```
 
-**8. Deletar a infraestrutura ao final**
+Ou pelo Portal do Azure: recurso `petpulse-oracle-db` → aba **Containers** → sub-aba **Console** → escolha `/bin/bash` → Conectar. Fica ainda melhor para o vídeo de demonstração, já que mostra visualmente a execução dentro do Azure.
 
-> ⚠️ Importante: delete os recursos ao terminar para evitar cobranças.
+**2. Conecte no banco com o SQL\*Plus**:
+
+```bash
+sqlplus petpulse@localhost:1521/XEPDB1
+```
+
+Quando pedir `Enter password:`, digite a senha do usuário `petpulse` (a mesma gravada como `oracle-app-password` no Key Vault).
+
+**3. Cole o conteúdo inteiro do `script_bd.sql`** no prompt `SQL>` (abra o arquivo no editor, copie tudo e cole). O SQL\*Plus executa cada comando terminado em `;` em sequência, criando as 5 tabelas e aplicando os `COMMENT ON`.
+
+**4. Confirme que as tabelas foram criadas:**
+
+```sql
+SELECT table_name FROM user_tables WHERE table_name LIKE 'PP_%' ORDER BY table_name;
+```
+
+Deve listar as 5: `PP_AlertasInteligentes`, `PP_DispositivoIots`, `PP_HistoricoClinicos`, `PP_Pets`, `PP_Usuarios`.
+
+**5. Saia:**
+
+```sql
+exit;
+```
+
+e depois `exit` de novo para sair do shell do container.
+
+> Se colar o arquivo inteiro de uma vez engasgar no console do navegador (paste muito longo em consoles web pode derrubar caracteres), cole em blocos menores — por exemplo, uma `CREATE TABLE` de cada vez — e rode o `SELECT` do passo 4 no final para confirmar que as 5 tabelas foram criadas. Pelo terminal local (`az container exec` fora do Portal) isso raramente acontece.
+
+### Solução de problemas comuns
+
+**`(ConflictError) A vault with the same name already exists in deleted state`** ao rodar o passo 5 (criação do Key Vault): isso acontece porque o Azure Key Vault tem *soft-delete* — se o Resource Group já foi apagado e recriado antes, o `petpulse-kv` antigo continua existindo num estado "excluído temporariamente" por um período de retenção, e bloqueia a criação de outro com o mesmo nome. Como não há nada para recuperar (as senhas serão regravadas do zero mesmo), a solução é purgar o vault antigo para liberar o nome:
+
+```bash
+az keyvault purge --name petpulse-kv --location southafricanorth
+```
+
+Depois é só rodar `./azure-cli.sh` de novo — ele reaproveita o Resource Group e o ACR (que já existem) e segue direto para criar o Key Vault normalmente.
+
+### Comandos úteis
+
+```bash
+# Ver logs dos containers
+az container logs --resource-group rg-challenge-clyvo-vet --name petpulse-api
+az container logs --resource-group rg-challenge-clyvo-vet --name petpulse-oracle-db
+
+# Logs em tempo real
+az container logs --resource-group rg-challenge-clyvo-vet --name petpulse-api --follow
+
+# Executar um comando dentro do container
+az container exec --resource-group rg-challenge-clyvo-vet --name petpulse-api --exec-command "/bin/bash"
+
+# Ver os segredos gravados no Key Vault (sem exibir o valor)
+az keyvault secret list --vault-name petpulse-kv --output table
+
+# Parar de cobrar pelos containers sem perder a imagem no ACR nem os segredos no Key Vault
+az container delete --resource-group rg-challenge-clyvo-vet --name petpulse-api --yes
+az container delete --resource-group rg-challenge-clyvo-vet --name petpulse-oracle-db --yes
+
+# Listar as imagens/tags disponíveis no ACR
+az acr repository show-tags --name petpulse --repository petpulse-api
+```
+
+> Importante: as ACIs permanecem rodando (e gerando consumo do crédito da assinatura) até serem deletadas. Se não estiver testando ativamente, use os comandos `az container delete` acima para parar a cobrança — a imagem continua guardada no ACR e os segredos continuam no Key Vault, então rodar `./azure-cli.sh` de novo recria os dois containers do zero (lembrando que o Oracle volta vazio, sendo necessário rodar o `script_bd.sql` novamente).
+
+### Deletando toda a infraestrutura da nuvem ao final
 
 ```bash
 az group delete --name "rg-challenge-clyvo-vet" --yes --no-wait
-```
-
-Confirme a deleção após alguns minutos:
-
-```bash
-az group show --name "rg-challenge-clyvo-vet" --query "properties.provisioningState" --output tsv
-# Se retornar erro "not found", a deleção foi confirmada
 ```
 
 ---
@@ -1175,7 +1247,7 @@ Após os testes, é possível conferir os dados diretamente no Oracle:
 SELECT * FROM "PP_Usuarios";
 SELECT * FROM "PP_Pets";
 SELECT * FROM "PP_HistoricoClinicos";
-SELECT * FROM "PP_DispositivosIot";
+SELECT * FROM "PP_DispositivoIots";
 SELECT * FROM "PP_AlertasInteligentes";
 ```
 
@@ -1221,4 +1293,4 @@ Isso evita valores inválidos e facilita o uso da API pelo Swagger.
 
 ## Conclusão
 
-A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database, Swagger, Serilog e OpenTelemetry (Health Checks, logging estruturado, tracing e métricas), atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais. A cobertura de testes automatizados (xUnit) nas camadas de Domínio, API e Infraestrutura reforça a confiabilidade das regras de negócio e da persistência de dados.
+A API PetPulse fornece uma base funcional para o sistema de saúde preditiva pet, permitindo o cadastro de tutores, pets, histórico clínico, dispositivos IoT e alertas inteligentes. A solução utiliza ASP.NET Core, Entity Framework Core, Oracle Database, Swagger, Serilog e OpenTelemetry (Health Checks, logging estruturado, tracing e métricas), atendendo ao escopo inicial do Challenge e permitindo evolução futura para regras mais avançadas de IA, análise preditiva e integração com dispositivos reais. A cobertura de testes automatizados (xUnit) nas camadas de Domínio, API e Infraestrutura reforça a confiabilidade das regras de negócio e da persistência de dados. Como etapa de DevOps, a imagem também pode ser publicada de forma serverless na nuvem via Azure Container Registry e Azure Container Instances, sem a necessidade de provisionar ou administrar máquinas virtuais.
