@@ -16,6 +16,7 @@
 - [Migrations](#migrations)
 - [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
 - [Testes automatizados](#testes-automatizados)
+- [Arquitetura de Deploy (ACR + ACI + Key Vault)](#arquitetura-de-deploy-acr--aci--key-vault)
 - [Como executar](#como-executar)
 - [Deploy em Nuvem (ACR + ACI + Key Vault)](#deploy-em-nuvem-acr--aci--key-vault)
 - [Portas e serviços](#portas-e-serviços)
@@ -384,6 +385,10 @@ dotnet test PetPulse.Infrastructure.Tests\PetPulse.Infrastructure.Tests.csproj
 > Convenção de nomenclatura dos testes: `MetodoTestado_Cenario_ResultadoEsperado` (ex.: `Create_ComEmailJaCadastrado_DeveRetornarBadRequestENaoPersistir`), seguindo o padrão AAA (Arrange/Act/Assert).
 
 ---
+## Arquitetura de Deploy (ACR + ACI + Key Vault)
+![alt text](<Screenshot 2026-09-05 152950.png>)
+
+
 
 ## Como executar
 
