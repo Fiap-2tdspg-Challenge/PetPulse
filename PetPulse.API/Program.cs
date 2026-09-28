@@ -62,6 +62,11 @@ builder.Services.AddOpenTelemetry()
 
 var app = builder.Build();
 
+// Garante um id de correlação por requisição (reaproveitado do header X-Correlation-Id
+// quando presente, ou gerado como novo Guid) e o injeta no Serilog LogContext antes do
+// log de resumo da requisição, para além da correlação por trace/span já existente.
+app.UseCorrelationId();
+
 app.UseSerilogRequestLogging();
 
 // Aplica migrations automaticamente ao iniciar - Inciar apenas caso for a primeira vez (não contendo o banco)
