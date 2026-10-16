@@ -20,7 +20,9 @@ public class UsuarioDtoTests
         Assert.Equal("Ana Souza", usuario.Nome);
         Assert.Equal("12345678901", usuario.Cpf);
         Assert.Equal("ana.souza@email.com", usuario.Email);
-        Assert.Equal("Senha123456", usuario.Senha);
+        // A senha é armazenada como hash (BCrypt), nunca em texto puro — ver Usuario.AtualizarSenha.
+        Assert.NotEqual("Senha123456", usuario.Senha);
+        Assert.True(usuario.VerificarSenha("Senha123456"));
         Assert.Equal("11999990001", usuario.Telefone);
         Assert.Equal("Rua das Flores, 100", usuario.Endereco);
     }

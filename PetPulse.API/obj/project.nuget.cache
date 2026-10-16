@@ -1,12 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "CBJder8O9WA=",
+  "dgSpecHash": "Ay2acTGQIqQ=",
   "success": true,
   "projectFilePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\aspnetcore.healthchecks.uris\\9.0.0\\aspnetcore.healthchecks.uris.9.0.0.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\bcrypt.net-next\\4.1.0\\bcrypt.net-next.4.1.0.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\10.0.12\\microsoft.aspnetcore.authentication.jwtbearer.10.0.12.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.5\\microsoft.aspnetcore.openapi.10.0.5.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.bcl.cryptography\\10.0.2\\microsoft.bcl.cryptography.10.0.2.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.build.framework\\18.0.2\\microsoft.build.framework.18.0.2.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\3.11.0\\microsoft.codeanalysis.analyzers.3.11.0.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.codeanalysis.common\\5.0.0\\microsoft.codeanalysis.common.5.0.0.nupkg.sha512",
@@ -23,6 +26,12 @@
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.extensions.apidescription.server\\10.0.0\\microsoft.extensions.apidescription.server.10.0.0.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.extensions.dependencymodel\\10.0.7\\microsoft.extensions.dependencymodel.10.0.7.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.extensions.diagnostics.healthchecks.entityframeworkcore\\10.0.7\\microsoft.extensions.diagnostics.healthchecks.entityframeworkcore.10.0.7.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.19.2\\microsoft.identitymodel.abstractions.8.19.2.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.19.2\\microsoft.identitymodel.jsonwebtokens.8.19.2.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.identitymodel.logging\\8.19.2\\microsoft.identitymodel.logging.8.19.2.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.identitymodel.protocols\\8.19.2\\microsoft.identitymodel.protocols.8.19.2.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\8.19.2\\microsoft.identitymodel.protocols.openidconnect.8.19.2.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.19.2\\microsoft.identitymodel.tokens.8.19.2.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.openapi\\2.4.1\\microsoft.openapi.2.4.1.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\microsoft.visualstudio.solutionpersistence\\1.0.52\\microsoft.visualstudio.solutionpersistence.1.0.52.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",
@@ -63,6 +72,7 @@
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\system.configuration.configurationmanager\\8.0.0\\system.configuration.configurationmanager.8.0.0.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\system.diagnostics.performancecounter\\8.0.0\\system.diagnostics.performancecounter.8.0.0.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\system.directoryservices.protocols\\8.0.2\\system.directoryservices.protocols.8.0.2.nupkg.sha512",
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.19.2\\system.identitymodel.tokens.jwt.8.19.2.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\system.security.cryptography.pkcs\\8.0.1\\system.security.cryptography.pkcs.8.0.1.nupkg.sha512",
     "C:\\Users\\OpenTech_PS\\.nuget\\packages\\system.security.cryptography.protecteddata\\8.0.0\\system.security.cryptography.protecteddata.8.0.0.nupkg.sha512"
   ],
@@ -75,6 +85,30 @@
       "warningLevel": 1,
       "filePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
       "libraryId": "Microsoft.OpenApi",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "message": "Package 'System.Security.Cryptography.Pkcs' 8.0.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-2fmv-rv2c-59x7",
+      "projectPath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
+      "libraryId": "System.Security.Cryptography.Pkcs",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'System.Security.Cryptography.Pkcs' 8.0.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-846f-f764-76mx",
+      "projectPath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
+      "warningLevel": 1,
+      "filePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API\\PetPulse.API.csproj",
+      "libraryId": "System.Security.Cryptography.Pkcs",
       "targetGraphs": [
         "net10.0"
       ]

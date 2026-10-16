@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
 using PetPulse.Domain.Enum;
@@ -11,10 +12,13 @@ namespace PetPulse.Controllers;
 /// <remarks>
 /// Base URL: /api/alertainteligente
 /// Exemplo: http://localhost:5292/api/alertainteligente
+///
+/// Todos os endpoints exigem um token JWT válido (ver <c>POST /api/auth/login</c>).
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 [Produces("application/json")]
+[Authorize]
 public class AlertaInteligenteController : ControllerBase
 {
     private readonly IAlertaInteligenteRepository _alertaInteligenteRepository;

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
 
@@ -11,10 +12,13 @@ namespace PetPulse.Controllers;
 /// <remarks>
 /// Base URL: /api/pet
 /// Exemplo: http://localhost:5292/api/pet
+///
+/// Todos os endpoints exigem um token JWT válido (ver <c>POST /api/auth/login</c>).
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 [Produces("application/json")]
+[Authorize]
 public class PetController : ControllerBase
 {
     private readonly IPetRepository _petRepository;

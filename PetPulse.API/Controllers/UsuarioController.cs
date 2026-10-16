@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
 
@@ -11,6 +12,9 @@ namespace PetPulse.Controllers;
 /// <remarks>
 /// Base URL: /api/usuario
 /// Exemplo: http://localhost:5292/api/usuario
+///
+/// O cadastro (<c>POST</c>) é público — é o único jeito de criar a própria conta.
+/// Os demais endpoints exigem um token JWT válido (ver <c>POST /api/auth/login</c>).
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
@@ -72,6 +76,7 @@ public class UsuarioController : ControllerBase
     /// <returns>Usuário criado.</returns>
     /// <response code="201">Usuário criado com sucesso.</response>
     /// <response code="400">Dados inválidos.</response>
+    [AllowAnonymous]
     [HttpPost]
     [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -112,6 +117,7 @@ public class UsuarioController : ControllerBase
     [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize]
     public IActionResult Update(Guid id, [FromBody] UsuarioRequest request)
     {
         if (!ModelState.IsValid)
@@ -144,6 +150,7 @@ public class UsuarioController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize]
     public IActionResult Delete(Guid id)
     {
         var removed = _usuarioRepository.Delete(id);

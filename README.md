@@ -2,10 +2,6 @@
 
 > API RESTful de saúde preditiva para pets, desenvolvida em ASP.NET Core com Oracle Database.
 
-## Membros 
-Pietro Paranhos Wilhelm rm561378
-João Vitor Biribilli rm565594
-Gabriel Neris Losano rm564093
 ---
 
 ## Sumário
@@ -19,6 +15,7 @@ Gabriel Neris Losano rm564093
 - [Configuração do banco Oracle](#configuração-do-banco-oracle)
 - [Migrations](#migrations)
 - [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
+- [Autenticação (JWT)](#autenticação-jwt)
 - [Testes automatizados](#testes-automatizados)
 - [Arquitetura de Deploy (ACR + ACI + Key Vault)](#arquitetura-de-deploy-acr--aci--key-vault)
 - [Como executar](#como-executar)
@@ -416,6 +413,52 @@ Exemplo de resposta para uma exceção não mapeada (produção — sem `traceId
 
 ---
 
+## Autenticação (JWT)
+
+A API usa autenticação via **JWT Bearer token**, seguindo o mesmo padrão de emissão usado no repositório de referência da disciplina (`2TDSPG-2026/Recommenda`): senha armazenada como hash (`BCrypt`, nunca em texto puro) e um endpoint de login que emite um token assinado.
+
+### Fluxo
+
+1. Cadastre um usuário em `POST /api/Usuario` (único endpoint de escrita público — é como se cria a própria conta).
+2. Autentique-se em `POST /api/auth/login`, enviando `email` e `senha`. A resposta traz o `accessToken` (JWT), a expiração (2h) e os dados básicos do usuário.
+3. Para qualquer outro endpoint da API, envie o token no header `Authorization: Bearer {accessToken}`. Sem esse header, ou com um token inválido/expirado, a API responde `401 Unauthorized`.
+
+No Swagger UI, clique no botão **Authorize** (cadeado no topo da página), cole o `accessToken` (sem o prefixo `Bearer`, o próprio Swagger adiciona) e todas as chamadas feitas pela interface passam a incluir o header automaticamente.
+
+### Endpoint
+
+| Método | Endpoint           | Descrição                                | Protegido? |
+| ------ | ------------------ | ----------------------------------------- | ---------- |
+| POST   | `/api/auth/login`  | Autentica um usuário e emite o token JWT  | Não        |
+
+### Exemplo de requisição
+
+```json
+POST /api/auth/login
+{
+  "email": "ana.souza@email.com",
+  "senha": "Senha123456"
+}
+```
+
+### Exemplo de resposta (200)
+
+```json
+{
+  "accessToken": "eyJhbGciOi...",
+  "expiracao": "2026-10-17T02:30:00Z",
+  "email": "ana.souza@email.com",
+  "nome": "Ana Souza"
+}
+```
+
+### Configuração
+
+A chave de assinatura vem da seção `Jwt` do `appsettings.json` (`Jwt:Key`, `Jwt:Issuer`, `Jwt:Audience`). Em produção a chave não fica no `appsettings.json`: o `azure-cli.sh` gera uma aleatória, grava no Key Vault (segredo `jwt-key`) e a injeta como variável de ambiente segura (`Jwt__Key`) no container da API — do mesmo jeito que a connection string do Oracle.
+
+
+---
+
 ## Testes automatizados
 
 A solução conta com testes automatizados em **xUnit**, organizados por camada e espelhando a própria Clean Architecture do projeto. Cada projeto de produção tem seu par de testes:
@@ -424,7 +467,7 @@ A solução conta com testes automatizados em **xUnit**, organizados por camada 
 |---|---|---|
 | `PetPulse.Domain.Tests` | Domínio | Regras de negócio das entidades `Usuario`, `Pet`, `HistoricoClinico`, `DispositivoIot` e `AlertaInteligente` — construção, validações de guarda (ex.: nome vazio, peso negativo, data futura) e os métodos `AtualizarDados` de cada entidade |
 | `PetPulse.Application.Tests` | Application (DTOs) | Mapeamento `ToDomain()`/`FromDomain()` e validação (`DataAnnotations`) dos DTOs de request/response das 5 entidades |
-| `PetPulse.API.Tests` | API / Controllers / Middlewares | Os 5 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`), com os repositórios isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`). Também cobre o `CorrelationIdMiddleware` e o `GlobalExceptionHandler` |
+| `PetPulse.API.Tests` | API / Controllers / Middlewares / Auth | Os 6 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`, `AuthController`), com os repositórios/serviços isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`, `401 Unauthorized`). Também cobre o `CorrelationIdMiddleware`, o `GlobalExceptionHandler`, o `LoginService` e a emissão de token no `JwtTokenIssuer` |
 | `PetPulse.Infrastructure.Tests` | Infraestrutura | As implementações EF Core dos 5 repositórios (`PetRepository`, `UsuarioRepository`, `HistoricoClinicoRepository`, `DispositivoIotRepository`, `AlertaInteligenteRepository`), usando `Microsoft.EntityFrameworkCore.InMemory`. Cobre persistência (`Add`/`Update`/`Delete`), buscas por relacionamento (ex.: pets de um usuário, histórico de um pet) e regras como a checagem case-insensitive de e-mail |
 
 ### Executando os testes
@@ -734,6 +777,9 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 | `ConnectionStrings__PetPulseOracle` | _(vazio)_ | Connection string do Oracle |
 | `ASPNETCORE_ENVIRONMENT` | `Local` (localmente) / `Production` (nuvem) | Ambiente de execução — propositalmente nunca `Development`, veja observação abaixo |
 | `ASPNETCORE_URLS` | `http://+:8080` | URL de escuta da API |
+| `Jwt__Key` | _(valor de desenvolvimento no `appsettings.json`)_ | Chave de assinatura dos tokens JWT — em produção vem do Key Vault (segredo `jwt-key`), gerada pelo `azure-cli.sh` |
+| `Jwt__Issuer` | `PetPulse` | Emissor (`iss`) do token JWT |
+| `Jwt__Audience` | `PetPulse.API` | Público-alvo (`aud`) do token JWT |
 
 > **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso tanto o `launchSettings.json` (execução local com `dotnet run`) quanto o `docker-compose.yml` usam `ASPNETCORE_ENVIRONMENT=Local` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
 
@@ -742,62 +788,71 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 
 ## Endpoints disponíveis
 
+> Coluna **Protegido?**: `Sim` exige o header `Authorization: Bearer {accessToken}` (ver [Autenticação (JWT)](#autenticação-jwt)). Os únicos endpoints públicos são o cadastro de usuário e o login.
+
+
+### Autenticação
+
+| Método | Endpoint          | Descrição                               | Protegido? |
+| ------ | ----------------- | ---------------------------------------- | ---------- |
+| POST   | `/api/auth/login` | Autentica um usuário e emite o token JWT | Não        |
+
 ### Usuário
 
-| Método | Endpoint            | Descrição               |
-| ------ | ------------------- | ----------------------- |
-| GET    | `/api/Usuario`      | Lista todos os usuários |
-| GET    | `/api/Usuario/{id}` | Busca usuário por ID    |
-| POST   | `/api/Usuario`      | Cria um usuário         |
-| PUT    | `/api/Usuario/{id}` | Atualiza um usuário     |
-| DELETE | `/api/Usuario/{id}` | Remove um usuário       |
+| Método | Endpoint            | Descrição               | Protegido? |
+| ------ | ------------------- | ----------------------- |------------|
+| GET    | `/api/Usuario`      | Lista todos os usuários | Não        |
+| GET    | `/api/Usuario/{id}` | Busca usuário por ID    | Não        |
+| POST   | `/api/Usuario`      | Cria um usuário         | Não        |
+| PUT    | `/api/Usuario/{id}` | Atualiza um usuário     | Sim        |
+| DELETE | `/api/Usuario/{id}` | Remove um usuário       | Sim        |
 
 ### Pet
 
-| Método | Endpoint                       | Descrição                |
-| ------ | ------------------------------ | ------------------------ |
-| GET    | `/api/Pet`                     | Lista todos os pets      |
-| GET    | `/api/Pet/{id}`                | Busca pet por ID         |
-| GET    | `/api/Pet/usuario/{usuarioId}` | Lista pets de um usuário |
-| POST   | `/api/Pet`                     | Cria um pet              |
-| PUT    | `/api/Pet/{id}`                | Atualiza um pet          |
-| DELETE | `/api/Pet/{id}`                | Remove um pet            |
+| Método | Endpoint                       | Descrição                | Protegido? |
+| ------ | ------------------------------ | ------------------------ | ---------- |
+| GET    | `/api/Pet`                     | Lista todos os pets      | Sim        |
+| GET    | `/api/Pet/{id}`                | Busca pet por ID         | Sim        |
+| GET    | `/api/Pet/usuario/{usuarioId}` | Lista pets de um usuário | Sim        |
+| POST   | `/api/Pet`                     | Cria um pet              | Sim        |
+| PUT    | `/api/Pet/{id}`                | Atualiza um pet          | Sim        |
+| DELETE | `/api/Pet/{id}`                | Remove um pet            | Sim        |
 
 ### Histórico Clínico
 
-| Método | Endpoint                            | Descrição                  |
-| ------ | ----------------------------------- | -------------------------- |
-| GET    | `/api/HistoricoClinico`             | Lista todos os históricos  |
-| GET    | `/api/HistoricoClinico/{id}`        | Busca histórico por ID     |
-| GET    | `/api/HistoricoClinico/pet/{petId}` | Lista históricos de um pet |
-| POST   | `/api/HistoricoClinico`             | Cria histórico clínico     |
-| PUT    | `/api/HistoricoClinico/{id}`        | Atualiza histórico clínico |
-| DELETE | `/api/HistoricoClinico/{id}`        | Remove histórico clínico   |
+| Método | Endpoint                            | Descrição                  | Protegido? |
+| ------ | ----------------------------------- | -------------------------- | ---------- |
+| GET    | `/api/HistoricoClinico`             | Lista todos os históricos  | Sim        |
+| GET    | `/api/HistoricoClinico/{id}`        | Busca histórico por ID     | Sim        |
+| GET    | `/api/HistoricoClinico/pet/{petId}` | Lista históricos de um pet | Sim        |
+| POST   | `/api/HistoricoClinico`             | Cria histórico clínico     | Sim        |
+| PUT    | `/api/HistoricoClinico/{id}`        | Atualiza histórico clínico | Sim        |
+| DELETE | `/api/HistoricoClinico/{id}`        | Remove histórico clínico   | Sim        |
 
 ### Dispositivo IoT
 
-| Método | Endpoint                          | Descrição                   |
-| ------ | --------------------------------- | ---------------------------- |
-| GET    | `/api/DispositivoIot`             | Lista todos os dispositivos |
-| GET    | `/api/DispositivoIot/{id}`        | Busca dispositivo por ID    |
-| GET    | `/api/DispositivoIot/pet/{petId}` | Busca dispositivo de um pet |
-| POST   | `/api/DispositivoIot`             | Cria dispositivo IoT        |
-| PUT    | `/api/DispositivoIot/{id}`        | Atualiza dispositivo IoT    |
-| DELETE | `/api/DispositivoIot/{id}`        | Remove dispositivo IoT      |
+| Método | Endpoint                          | Descrição                    | Protegido? |
+| ------ | --------------------------------- | ----------------------------- | ---------- |
+| GET    | `/api/DispositivoIot`             | Lista todos os dispositivos  | Sim        |
+| GET    | `/api/DispositivoIot/{id}`        | Busca dispositivo por ID     | Sim        |
+| GET    | `/api/DispositivoIot/pet/{petId}` | Busca dispositivo de um pet  | Sim        |
+| POST   | `/api/DispositivoIot`             | Cria dispositivo IoT         | Sim        |
+| PUT    | `/api/DispositivoIot/{id}`        | Atualiza dispositivo IoT     | Sim        |
+| DELETE | `/api/DispositivoIot/{id}`        | Remove dispositivo IoT       | Sim        |
 
 ### Alerta Inteligente
 
-| Método | Endpoint                                 | Descrição                     |
-| ------ | ----------------------------------------- | ------------------------------ |
-| GET    | `/api/AlertaInteligente`                 | Lista todos os alertas        |
-| GET    | `/api/AlertaInteligente/{id}`            | Busca alerta por ID           |
-| GET    | `/api/AlertaInteligente/pet/{petId}`     | Lista alertas de um pet       |
-| GET    | `/api/AlertaInteligente/status/{status}` | Lista alertas por status      |
-| POST   | `/api/AlertaInteligente`                 | Cria alerta inteligente       |
-| PUT    | `/api/AlertaInteligente/{id}`            | Atualiza alerta inteligente   |
-| PUT    | `/api/AlertaInteligente/{id}/visualizar` | Marca alerta como visualizado |
-| PUT    | `/api/AlertaInteligente/{id}/resolver`   | Marca alerta como resolvido   |
-| DELETE | `/api/AlertaInteligente/{id}`            | Remove alerta inteligente     |
+| Método | Endpoint                                 | Descrição                      | Protegido? |
+| ------ | ----------------------------------------- | ------------------------------- | ---------- |
+| GET    | `/api/AlertaInteligente`                 | Lista todos os alertas         | Sim        |
+| GET    | `/api/AlertaInteligente/{id}`            | Busca alerta por ID            | Sim        |
+| GET    | `/api/AlertaInteligente/pet/{petId}`     | Lista alertas de um pet        | Sim        |
+| GET    | `/api/AlertaInteligente/status/{status}` | Lista alertas por status       | Sim        |
+| POST   | `/api/AlertaInteligente`                 | Cria alerta inteligente        | Sim        |
+| PUT    | `/api/AlertaInteligente/{id}`            | Atualiza alerta inteligente    | Sim        |
+| PUT    | `/api/AlertaInteligente/{id}/visualizar` | Marca alerta como visualizado  | Sim        |
+| PUT    | `/api/AlertaInteligente/{id}/resolver`   | Marca alerta como resolvido    | Sim        |
+| DELETE | `/api/AlertaInteligente/{id}`            | Remove alerta inteligente      | Sim        |
 ---
 
 ## Ordem recomendada para testar
@@ -805,14 +860,16 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 Como existem relacionamentos entre as entidades, recomenda-se testar na seguinte ordem:
 
 ```text
-1. Criar usuário
-2. Criar pet usando o ID do usuário
-3. Criar histórico clínico usando o ID do pet
-4. Criar dispositivo IoT usando o ID do pet
-5. Criar alerta inteligente usando o ID do pet
+1. Criar usuário (POST /api/Usuario — único endpoint de escrita público)
+2. Login (POST /api/auth/login) para obter o accessToken
+3. Usar o accessToken (Authorization: Bearer {accessToken}) em todas as chamadas a seguir
+4. Criar pet usando o ID do usuário
+5. Criar histórico clínico usando o ID do pet
+6. Criar dispositivo IoT usando o ID do pet
+7. Criar alerta inteligente usando o ID do pet
 ```
 
-> Importante: ao testar pelo Swagger, sempre copie os IDs retornados pela própria API. No Oracle, os IDs do tipo GUID podem aparecer como `RAW(16)`, em formato diferente do usado no JSON.
+> Importante: ao testar pelo Swagger, sempre copie os IDs retornados pela própria API. No Oracle, os IDs do tipo GUID podem aparecer como `RAW(16)`, em formato diferente do usado no JSON. Para o passo 3, clique em **Authorize** no topo do Swagger UI e cole o `accessToken` do passo 2.
 
 ---
 
@@ -846,6 +903,42 @@ POST /api/Usuario
 ```
 
 Copie o campo `id` retornado. Ele será usado como `usuarioId` nos testes de Pet.
+
+---
+
+## Login (obter o token JWT)
+
+### Endpoint
+
+```http
+POST /api/auth/login
+```
+
+### Body
+
+```json
+{
+  "email": "ana.souza@email.com",
+  "senha": "Senha123456"
+}
+```
+
+### Resultado esperado
+
+```text
+200 OK
+```
+
+```json
+{
+  "accessToken": "eyJhbGciOi...",
+  "expiracao": "2026-10-17T02:30:00Z",
+  "email": "ana.souza@email.com",
+  "nome": "Ana Souza"
+}
+```
+
+Copie o `accessToken` e informe-o no botão **Authorize** do Swagger UI (ou no header `Authorization: Bearer {accessToken}`, se estiver testando com `curl`/Postman). Ele é exigido em todos os endpoints a partir daqui.
 
 ---
 
@@ -1308,6 +1401,43 @@ Resultado esperado:
 
 ---
 
+## Chamar um endpoint protegido sem token
+
+```http
+GET /api/Pet
+```
+
+(sem o header `Authorization`)
+
+Resultado esperado:
+
+```text
+401 Unauthorized
+```
+
+---
+
+## Login com credenciais incorretas
+
+```http
+POST /api/auth/login
+```
+
+```json
+{
+  "email": "ana.souza@email.com",
+  "senha": "senha-errada"
+}
+```
+
+Resultado esperado:
+
+```text
+401 Unauthorized
+```
+
+---
+
 ## Consultas para conferir no Oracle
 
 Após os testes, é possível conferir os dados diretamente no Oracle:
@@ -1335,11 +1465,13 @@ ORDER BY table_name;
 
 | Código | Significado           | Uso na API                                    |
 | ------ | ---------------------- | --------------------------------------------- |
-| 200    | OK                    | Consulta ou atualização realizada com sucesso |
+| 200    | OK                    | Consulta, atualização ou login realizados com sucesso |
 | 201    | Created               | Registro criado com sucesso                   |
 | 204    | No Content            | Registro removido com sucesso                 |
 | 400    | Bad Request           | Dados inválidos ou regra de validação violada |
+| 401    | Unauthorized          | Token JWT ausente/inválido/expirado, ou login com credenciais incorretas |
 | 404    | Not Found             | Registro não encontrado                       |
+| 502    | Bad Gateway           | Banco de dados (Oracle) indisponível          |
 | 500    | Internal Server Error | Erro inesperado na aplicação                  |
 
 ---

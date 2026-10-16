@@ -68,6 +68,47 @@ public class UsuarioTests
         Assert.Equal("Senha não pode ser vazia.", ex.Message);
     }
 
+    [Fact]
+    public void AtualizarSenha_DeveArmazenarHashENaoASenhaCrua()
+    {
+        // Arrange
+        var usuario = CriarUsuarioValido();
+
+        // Act
+        usuario.AtualizarSenha("Senha123456");
+
+        // Assert
+        Assert.NotEqual("Senha123456", usuario.Senha);
+    }
+
+    [Fact]
+    public void VerificarSenha_ComASenhaCorreta_DeveRetornarTrue()
+    {
+        // Arrange
+        var usuario = CriarUsuarioValido();
+        usuario.AtualizarSenha("Senha123456");
+
+        // Act
+        var resultado = usuario.VerificarSenha("Senha123456");
+
+        // Assert
+        Assert.True(resultado);
+    }
+
+    [Fact]
+    public void VerificarSenha_ComASenhaIncorreta_DeveRetornarFalse()
+    {
+        // Arrange
+        var usuario = CriarUsuarioValido();
+        usuario.AtualizarSenha("Senha123456");
+
+        // Act
+        var resultado = usuario.VerificarSenha("SenhaErrada999");
+
+        // Assert
+        Assert.False(resultado);
+    }
+
     private static Usuario CriarUsuarioValido() =>
         new(
             "Ana Souza",

@@ -170,3 +170,13 @@ E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\obj\Debug\net10.0\refint\PetPuls
 E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\obj\Debug\net10.0\PetPulse.API.Tests.pdb
 E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\obj\Debug\net10.0\PetPulse.API.Tests.genruntimeconfig.cache
 E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\obj\Debug\net10.0\ref\PetPulse.API.Tests.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\BCrypt.Net-Next.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.IdentityModel.Abstractions.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.IdentityModel.JsonWebTokens.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.IdentityModel.Logging.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.API.Tests\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll

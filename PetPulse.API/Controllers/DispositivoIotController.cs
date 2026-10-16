@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
 
@@ -10,10 +11,13 @@ namespace PetPulse.Controllers;
 /// <remarks>
 /// Base URL: /api/dispositivoiot
 /// Exemplo: http://localhost:5292/api/dispositivoiot
+///
+/// Todos os endpoints exigem um token JWT válido (ver <c>POST /api/auth/login</c>).
 /// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 [Produces("application/json")]
+[Authorize]
 public class DispositivoIotController : ControllerBase
 {
     private readonly IDispositivoIotRepository _dispositivoIotRepository;

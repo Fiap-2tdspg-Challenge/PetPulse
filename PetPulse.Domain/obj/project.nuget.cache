@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "fFzd0EVG8tM=",
+  "dgSpecHash": "5NgzELUu/ps=",
   "success": true,
   "projectFilePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.Domain\\PetPulse.Domain.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\OpenTech_PS\\.nuget\\packages\\bcrypt.net-next\\4.1.0\\bcrypt.net-next.4.1.0.nupkg.sha512"
+  ],
   "logs": []
 }

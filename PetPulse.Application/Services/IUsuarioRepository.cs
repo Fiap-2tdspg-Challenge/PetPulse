@@ -11,6 +11,11 @@ public interface IUsuarioRepository
 
     Usuario? GetById(Guid id);
 
+    /// <summary>
+    /// Busca um usuário pelo e-mail (case-insensitive). Usado na autenticação (login).
+    /// </summary>
+    Usuario? GetByEmail(string email);
+
     Usuario Add(Usuario usuario);
 
     Usuario Update(Usuario usuario);

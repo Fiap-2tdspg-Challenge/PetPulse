@@ -1,5 +1,6 @@
 ﻿using PetPulse.Domain.Commom;
 using PetPulse.Domain.Exceptions;
+using PetPulse.Domain.Helpers;
 
 namespace PetPulse.Domain.entites;
 
@@ -67,8 +68,14 @@ public class Usuario : BaseEntity
         if (string.IsNullOrWhiteSpace(senha))
             throw new DomainException("Senha não pode ser vazia.");
 
-        Senha = senha;
+        Senha = HashHelper.Hash(senha);
     }
+
+    /// <summary>
+    /// Verifica se a senha informada (texto puro) corresponde à senha cadastrada
+    /// (armazenada como hash). Usado no login para autenticar o usuário.
+    /// </summary>
+    public bool VerificarSenha(string senhaCrua) => HashHelper.Verify(senhaCrua, Senha);
 
     public void AtualizarTelefone(string? telefone)
     {

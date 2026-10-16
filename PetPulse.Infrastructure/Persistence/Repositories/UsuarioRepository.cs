@@ -21,6 +21,17 @@ public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioReposit
             .FirstOrDefault(usuario => usuario.Id == id);
     }
 
+    public Usuario? GetByEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+
+        return context.Usuarios
+            .FirstOrDefault(usuario => usuario.Email.ToLower() == normalizedEmail);
+    }
+
     public Usuario Add(Usuario usuario)
     {
         ArgumentNullException.ThrowIfNull(usuario);

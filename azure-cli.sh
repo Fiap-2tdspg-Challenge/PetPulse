@@ -157,7 +157,6 @@ fi
 az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name oracle-app-password --value "$ORACLE_APP_PASSWORD" >/dev/null
 az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name acr-username --value "$ACR_ADMIN_USERNAME" >/dev/null
 az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name acr-password --value "$ACR_ADMIN_PASSWORD" >/dev/null
-echo "  Segredos gravados: oracle-password, oracle-app-password, acr-username, acr-password."
 
 # ---------------------------------------------------------------
 # 6. Criar a ACI do Oracle (banco containerizado, sem volume)
@@ -225,7 +224,6 @@ az container create \
   --ports 8080 \
   --dns-name-label "$API_DNS_LABEL" \
   --environment-variables ASPNETCORE_ENVIRONMENT=Production ASPNETCORE_URLS=http://+:8080 \
-  --secure-environment-variables ConnectionStrings__PetPulseOracle="$ORACLE_CONNECTION" \
   --restart-policy OnFailure
 
 # ---------------------------------------------------------------

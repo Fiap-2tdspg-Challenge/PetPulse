@@ -10,3 +10,4 @@ E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\obj\Debug\net10.0\PetPulse.Domain.d
 E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\obj\Debug\net10.0\refint\PetPulse.Domain.dll
 E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\obj\Debug\net10.0\PetPulse.Domain.pdb
 E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\obj\Debug\net10.0\ref\PetPulse.Domain.dll
+E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\obj\Debug\net10.0\PetPulse.Domain.csproj.AssemblyReference.cache

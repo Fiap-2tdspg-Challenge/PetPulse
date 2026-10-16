@@ -43,6 +43,38 @@ public class UsuarioRepositoryTests
     }
 
     [Fact]
+    public void GetByEmail_ComEmailCadastrado_DeveRetornarOUsuarioIndependenteDeMaiusculas()
+    {
+        // Arrange
+        using var context = CriarContexto();
+        var repository = new UsuarioRepository(context);
+        var usuario = CriarUsuarioValido(email: "maria@teste.com");
+        context.Usuarios.Add(usuario);
+        context.SaveChanges();
+
+        // Act
+        var encontrado = repository.GetByEmail("MARIA@TESTE.COM");
+
+        // Assert
+        Assert.NotNull(encontrado);
+        Assert.Equal(usuario.Id, encontrado!.Id);
+    }
+
+    [Fact]
+    public void GetByEmail_ComEmailNaoCadastrado_DeveRetornarNull()
+    {
+        // Arrange
+        using var context = CriarContexto();
+        var repository = new UsuarioRepository(context);
+
+        // Act
+        var encontrado = repository.GetByEmail("naoexiste@teste.com");
+
+        // Assert
+        Assert.Null(encontrado);
+    }
+
+    [Fact]
     public void ExistsByEmail_ComEmailCadastrado_DeveRetornarTrueIndependenteDeMaiusculas()
     {
         // Arrange

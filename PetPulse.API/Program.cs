@@ -27,6 +27,8 @@ builder.Services.AddPetPulseDbContext(builder.Configuration);
 
 builder.Services.AddPetPulseRepositories();
 
+builder.Services.AddPetPulseAuth(builder.Configuration);
+
 builder.Services.addPetPulseSwagger(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -106,6 +108,11 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseHttpsRedirection();
+
+// UseAuthentication precisa vir antes de UseAuthorization: é ela que lê o header
+// "Authorization: Bearer {token}", valida o JWT e popula o HttpContext.User — sem
+// isso, [Authorize] sempre rejeitaria a requisição mesmo com um token válido.
+app.UseAuthentication();
 
 app.UseAuthorization();
 
