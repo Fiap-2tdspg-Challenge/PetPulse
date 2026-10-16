@@ -88,7 +88,7 @@
     {
       "code": "NU1903",
       "level": "Warning",
-      "message": "O pacote 'Microsoft.OpenApi' 2.4.1 tem uma alta vulnerabilidade de gravidade conhecida, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
+      "message": "Package 'Microsoft.OpenApi' 2.4.1 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
       "projectPath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API.Tests\\PetPulse.API.Tests.csproj",
       "warningLevel": 1,
       "filePath": "E:\\2TDSPG\\challenge\\PetPulse\\PetPulse.API.Tests\\PetPulse.API.Tests.csproj",
