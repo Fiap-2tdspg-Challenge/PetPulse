@@ -3,6 +3,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using PetPulse.ExceptionHandling;
 using PetPulse.Extesions;
 using PetPulse.Health;
 using PetPulse.Infrastructure.Persistence;
@@ -39,6 +40,7 @@ builder.Services.AddHealthChecks()
     .AddUrlGroup(new Uri("https://fiap.com.br"), name: "FIAP"); // ou outro serviço externo real, mas atualmente não consumimos nenhum
 
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Telemetria
 builder.Services.AddOpenTelemetry()
@@ -61,6 +63,19 @@ builder.Services.AddOpenTelemetry()
         .AddPrometheusExporter());
 
 var app = builder.Build();
+
+// Tratamento global de exceções: captura qualquer exceção não tratada em qualquer middleware/
+// controller abaixo e devolve uma resposta ProblemDetails consistente (ver GlobalExceptionHandler).
+// Fica como o primeiro middleware da pipeline para cobrir tudo que vem depois dele.
+//
+// Observação: a partir do .NET 8, o ASP.NET Core registra automaticamente a "Developer
+// Exception Page" como o middleware mais externo da pipeline sempre que o ambiente é
+// literalmente "Development" — e ela intercepta a exceção antes mesmo de chegar aqui,
+// devolvendo a página/JSON de debug "crus" (stack trace, headers) em vez da resposta
+// mapeada pelo GlobalExceptionHandler. Por isso o perfil local (launchSettings.json) usa
+// ASPNETCORE_ENVIRONMENT=Local em vez de "Development": assim o GlobalExceptionHandler é
+// sempre quem responde, mesmo rodando localmente com "dotnet run".
+app.UseExceptionHandler();
 
 // Garante um id de correlação por requisição (reaproveitado do header X-Correlation-Id
 // quando presente, ou gerado como novo Guid) e o injeta no Serilog LogContext antes do

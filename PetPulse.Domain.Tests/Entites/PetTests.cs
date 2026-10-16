@@ -1,4 +1,5 @@
 using PetPulse.Domain.entites;
+using PetPulse.Domain.Exceptions;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Domain.Tests;
@@ -46,7 +47,7 @@ public class PetTests
             PortePetEnum.Medio);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Nome do pet não pode ser vazio.", ex.Message);
     }
 
@@ -61,7 +62,7 @@ public class PetTests
         var act = () => pet.AtualizarDataNascimento(dataFutura);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Data de nascimento não pode ser futura.", ex.Message);
     }
 
@@ -77,7 +78,7 @@ public class PetTests
         var act = () => pet.AtualizarPeso(pesoInvalido);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Peso deve ser maior que zero.", ex.Message);
     }
 
@@ -126,7 +127,7 @@ public class PetTests
             PortePetEnum.Grande);
 
         // Assert
-        Assert.Throws<Exception>(act);
+        Assert.Throws<DomainException>(act);
         Assert.Equal("Thor", pet.Nome);
     }
 

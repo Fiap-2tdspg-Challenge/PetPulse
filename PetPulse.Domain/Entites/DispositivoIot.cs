@@ -1,5 +1,6 @@
 ﻿using PetPulse.Domain.Commom;
 using PetPulse.Domain.Enum;
+using PetPulse.Domain.Exceptions;
 
 namespace PetPulse.Domain.entites;
 
@@ -58,16 +59,16 @@ public class DispositivoIot : BaseEntity
         DateTime? dataUltimaLeitura)
     {
         if (intervaloColetaMinutos.HasValue && intervaloColetaMinutos.Value <= 0)
-            throw new Exception("Intervalo de coleta deve ser maior que zero.");
+            throw new DomainException("Intervalo de coleta deve ser maior que zero.");
 
         if (frequenciaCardiaca.HasValue && frequenciaCardiaca.Value <= 0)
-            throw new Exception("Frequência cardíaca deve ser maior que zero.");
+            throw new DomainException("Frequência cardíaca deve ser maior que zero.");
 
         if (nivelAtividade.HasValue && nivelAtividade.Value < 0)
-            throw new Exception("Nível de atividade não pode ser negativo.");
+            throw new DomainException("Nível de atividade não pode ser negativo.");
 
         if (pressao.HasValue && pressao.Value <= 0)
-            throw new Exception("Pressão deve ser maior que zero.");
+            throw new DomainException("Pressão deve ser maior que zero.");
 
         IntervaloColetaMinutos = intervaloColetaMinutos;
         FrequenciaCardiaca = frequenciaCardiaca;

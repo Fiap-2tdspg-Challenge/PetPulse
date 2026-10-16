@@ -1,0 +1,68 @@
+[2026-10-16 18:55:44 INF] Now listening on: http://localhost:5292 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2026-10-16 18:55:44 INF] Application started. Press Ctrl+C to shut down. {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2026-10-16 18:55:44 INF] Hosting environment: Local {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2026-10-16 18:55:44 INF] Content root path: E:\2TDSPG\challenge\PetPulse\PetPulse.API {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2026-10-16 18:56:44 WRN] Failed to determine the https port for redirect. {"EventId":{"Id":3,"Name":"FailedToDeterminePort"},"SourceContext":"Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware","RequestId":"0HNPBQ1F3M7P8:00000001","RequestPath":"/","ConnectionId":"0HNPBQ1F3M7P8","CorrelationId":"c952122c-7d1c-4e3b-b2e5-8b869d9dc218","SpanId":"a440eb6c32c169d0","TraceId":"ffca4cf6f2510da3ba0899de3f47db18","ParentId":"0000000000000000"}
+[2026-10-16 18:56:44 INF] HTTP GET / responded 404 in 37.5114 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"c952122c-7d1c-4e3b-b2e5-8b869d9dc218","RequestId":"0HNPBQ1F3M7P8:00000001","ConnectionId":"0HNPBQ1F3M7P8","SpanId":"a440eb6c32c169d0","TraceId":"ffca4cf6f2510da3ba0899de3f47db18","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/index.html responded 200 in 74.1135 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"6d04057e-8bdd-478f-a6b7-bde8507d56fd","RequestId":"0HNPBQ1F3M7P8:00000002","ConnectionId":"0HNPBQ1F3M7P8","SpanId":"d65e6a56c6f16c5d","TraceId":"59f7f9947fc5b2142d78af0419182353","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/index.js responded 200 in 0.3409 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"083247c0-4b8c-4591-a683-6c349b538234","RequestId":"0HNPBQ1F3M7PC:00000001","ConnectionId":"0HNPBQ1F3M7PC","SpanId":"bf679126fcbbceec","TraceId":"dc4ea2a57416f44d01301a8984c30863","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/index.css responded 200 in 26.1642 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"8abafb85-a631-4614-ae1c-ccbfbfb9f92b","RequestId":"0HNPBQ1F3M7P8:00000003","ConnectionId":"0HNPBQ1F3M7P8","SpanId":"2739b2f2a4ea212b","TraceId":"4674da781977ec157ed182e47379b876","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/swagger-ui.css responded 200 in 29.3542 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"21390ea7-b5d7-43c6-8879-38a1b120920c","RequestId":"0HNPBQ1F3M7P9:00000001","ConnectionId":"0HNPBQ1F3M7P9","SpanId":"041f9a98849dc680","TraceId":"7670ef5198a526872cc9c8f951e98f22","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/swagger-ui-standalone-preset.js responded 200 in 36.2588 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"e3d6e3e1-2675-4832-a747-1b0b80e36efd","RequestId":"0HNPBQ1F3M7PB:00000001","ConnectionId":"0HNPBQ1F3M7PB","SpanId":"9564617caee4dd03","TraceId":"d1fcb676fb0830d1e023a2e44c1cf39d","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/swagger-ui-bundle.js responded 200 in 36.2707 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"a8ac4c5c-52ab-459b-bea2-087b92b3e052","RequestId":"0HNPBQ1F3M7PA:00000001","ConnectionId":"0HNPBQ1F3M7PA","SpanId":"5ef7cd440015354a","TraceId":"fc6187f7318c5d872b1eacbaba3ea896","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/favicon-32x32.png responded 200 in 1.2041 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"88c51130-f23b-4be7-b99f-91e5a55b5fb4","RequestId":"0HNPBQ1F3M7PB:00000002","ConnectionId":"0HNPBQ1F3M7PB","SpanId":"89029707d340e93f","TraceId":"ba0874cdc5d2ab0c8a0197a879fbd0e5","ParentId":"0000000000000000"}
+[2026-10-16 18:56:47 INF] HTTP GET /swagger/v1/swagger.json responded 200 in 223.7637 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"e0846889-de59-4d7b-b404-c146907143a7","RequestId":"0HNPBQ1F3M7PA:00000002","ConnectionId":"0HNPBQ1F3M7PA","SpanId":"0263fbbbf7bcffc8","TraceId":"df39f11bac3ac0f54efe85cbb00fd547","ParentId":"0000000000000000"}
+[2026-10-16 18:56:53 INF] Executed DbCommand (86ms) [Parameters=[], CommandType='"Text"', CommandTimeout='0']
+SELECT "p"."ID_USUARIO", "p"."ATIVO", "p"."CPF", "p"."DT_CADASTRO", "p"."EMAIL", "p"."ENDERECO", "p"."NOME", "p"."SENHA", "p"."TELEFONE"
+FROM "PP_Usuarios" "p"
+ORDER BY "p"."NOME" {"EventId":{"Id":20101,"Name":"Microsoft.EntityFrameworkCore.Database.Command.CommandExecuted"},"SourceContext":"Microsoft.EntityFrameworkCore.Database.Command","ActionId":"e2e08dc9-6c32-4b5d-9cc2-0bbd8e1854da","ActionName":"PetPulse.Controllers.UsuarioController.GetAll (PetPulse.API)","RequestId":"0HNPBQ1F3M7PA:00000003","RequestPath":"/api/Usuario","ConnectionId":"0HNPBQ1F3M7PA","CorrelationId":"e82f8841-bd91-41ee-83ee-b72531c604de","SpanId":"323d02c658820ff0","TraceId":"fc272078df1678a34e34d3a240a49b3a","ParentId":"4cd5232e07cfbe85"}
+[2026-10-16 18:56:53 INF] HTTP GET /api/Usuario responded 200 in 1891.3353 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"e82f8841-bd91-41ee-83ee-b72531c604de","RequestId":"0HNPBQ1F3M7PA:00000003","ConnectionId":"0HNPBQ1F3M7PA","SpanId":"4cd5232e07cfbe85","TraceId":"fc272078df1678a34e34d3a240a49b3a","ParentId":"0000000000000000"}
+[2026-10-16 18:57:11 INF] Executed DbCommand (24ms) [Parameters=[:p_id='?' (DbType = Binary)], CommandType='"Text"', CommandTimeout='0']
+SELECT "p"."ID_USUARIO", "p"."ATIVO", "p"."CPF", "p"."DT_CADASTRO", "p"."EMAIL", "p"."ENDERECO", "p"."NOME", "p"."SENHA", "p"."TELEFONE"
+FROM "PP_Usuarios" "p"
+WHERE "p"."ID_USUARIO" = :p_id
+FETCH FIRST 1 ROWS ONLY {"EventId":{"Id":20101,"Name":"Microsoft.EntityFrameworkCore.Database.Command.CommandExecuted"},"SourceContext":"Microsoft.EntityFrameworkCore.Database.Command","ActionId":"664d11cd-b946-4149-b23b-f4f5d76aff75","ActionName":"PetPulse.Controllers.PetController.Create (PetPulse.API)","RequestId":"0HNPBQ1F3M7PA:00000004","RequestPath":"/api/Pet","ConnectionId":"0HNPBQ1F3M7PA","CorrelationId":"47576ca5-ad3a-4560-a971-871e89bfc2cc","SpanId":"3834fa7b63f54bcd","TraceId":"9dc2a68ff90c26779f7933b708f03203","ParentId":"921865fe0c0117c3"}
+[2026-10-16 18:57:11 ERR] HTTP POST /api/Pet responded 500 in 180.1902 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","CorrelationId":"47576ca5-ad3a-4560-a971-871e89bfc2cc","RequestId":"0HNPBQ1F3M7PA:00000004","ConnectionId":"0HNPBQ1F3M7PA","SpanId":"921865fe0c0117c3","TraceId":"9dc2a68ff90c26779f7933b708f03203","ParentId":"0000000000000000"}
+PetPulse.Domain.Exceptions.DomainException: Data de nascimento não pode ser futura.
+   at PetPulse.Domain.entites.Pet.AtualizarDataNascimento(Nullable`1 dataNascimento) in E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\Entites\Pet.cs:line 85
+   at PetPulse.Domain.entites.Pet..ctor(Guid usuarioId, String nome, String especie, String raca, Nullable`1 dataNascimento, Nullable`1 peso, SexoPetEnum sexo, Boolean castrado, PortePetEnum porte) in E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\Entites\Pet.cs:line 54
+   at PetPulse.Application.DTOs.PetRequest.ToDomain() in E:\2TDSPG\challenge\PetPulse\PetPulse.Application\DTOs\PetRequest.cs:line 43
+   at PetPulse.Controllers.PetController.Create(PetRequest request) in E:\2TDSPG\challenge\PetPulse\PetPulse.API\Controllers\PetController.cs:line 111
+   at lambda_method21(Closure, Object, Object[])
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.SyncActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+[2026-10-16 18:57:11 ERR] Exceção não tratada: Data de nascimento não pode ser futura. : TraceId 00-9dc2a68ff90c26779f7933b708f03203-921865fe0c0117c3-01 {"SourceContext":"PetPulse.ExceptionHandling.GlobalExceptionHandler","RequestId":"0HNPBQ1F3M7PA:00000004","RequestPath":"/api/Pet","ConnectionId":"0HNPBQ1F3M7PA","SpanId":"921865fe0c0117c3","ParentId":"0000000000000000"}
+PetPulse.Domain.Exceptions.DomainException: Data de nascimento não pode ser futura.
+   at PetPulse.Domain.entites.Pet.AtualizarDataNascimento(Nullable`1 dataNascimento) in E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\Entites\Pet.cs:line 85
+   at PetPulse.Domain.entites.Pet..ctor(Guid usuarioId, String nome, String especie, String raca, Nullable`1 dataNascimento, Nullable`1 peso, SexoPetEnum sexo, Boolean castrado, PortePetEnum porte) in E:\2TDSPG\challenge\PetPulse\PetPulse.Domain\Entites\Pet.cs:line 54
+   at PetPulse.Application.DTOs.PetRequest.ToDomain() in E:\2TDSPG\challenge\PetPulse\PetPulse.Application\DTOs\PetRequest.cs:line 43
+   at PetPulse.Controllers.PetController.Create(PetRequest request) in E:\2TDSPG\challenge\PetPulse\PetPulse.API\Controllers\PetController.cs:line 111
+   at lambda_method21(Closure, Object, Object[])
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.SyncActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at PetPulse.Middlewares.CorrelationIdMiddleware.InvokeAsync(HttpContext context) in E:\2TDSPG\challenge\PetPulse\PetPulse.API\Middlewares\CorrelationIdMiddleware.cs:line 33
+   at Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddlewareImpl.<Invoke>g__Awaited|10_0(ExceptionHandlerMiddlewareImpl middleware, HttpContext context, Task task)

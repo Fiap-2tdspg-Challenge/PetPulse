@@ -1,4 +1,5 @@
 using PetPulse.Domain.entites;
+using PetPulse.Domain.Exceptions;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Domain.Tests;
@@ -38,7 +39,7 @@ public class AlertaInteligenteTests
             null);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Mensagem do alerta não pode ser vazia.", ex.Message);
     }
 
@@ -103,7 +104,7 @@ public class AlertaInteligenteTests
             null);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Mensagem do alerta não pode ser vazia.", ex.Message);
     }
 

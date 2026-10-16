@@ -1,5 +1,6 @@
 ﻿using PetPulse.Domain.Commom;
 using PetPulse.Domain.Enum;
+using PetPulse.Domain.Exceptions;
 
 namespace PetPulse.Domain.entites;
 
@@ -46,7 +47,7 @@ public class HistoricoClinico : BaseEntity
     public void AtualizarDescricao(string descricao)
     {
         if (string.IsNullOrWhiteSpace(descricao))
-            throw new Exception("Descrição do histórico clínico não pode ser vazia.");
+            throw new DomainException("Descrição do histórico clínico não pode ser vazia.");
 
         Descricao = descricao;
     }

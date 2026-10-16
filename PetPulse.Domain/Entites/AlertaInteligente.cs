@@ -1,5 +1,6 @@
 ﻿using PetPulse.Domain.Commom;
 using PetPulse.Domain.Enum;
+using PetPulse.Domain.Exceptions;
 
 namespace PetPulse.Domain.entites;
 
@@ -78,7 +79,7 @@ public class AlertaInteligente : BaseEntity
     public void AtualizarMensagem(string mensagem)
     {
         if (string.IsNullOrWhiteSpace(mensagem))
-            throw new Exception("Mensagem do alerta não pode ser vazia.");
+            throw new DomainException("Mensagem do alerta não pode ser vazia.");
 
         Mensagem = mensagem;
     }

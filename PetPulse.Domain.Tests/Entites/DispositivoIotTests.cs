@@ -1,4 +1,5 @@
 using PetPulse.Domain.entites;
+using PetPulse.Domain.Exceptions;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Domain.Tests;
@@ -39,7 +40,7 @@ public class DispositivoIotTests
         var act = () => dispositivo.AtualizarLeitura(30, 0, 72.5m, 12.8m, DateTime.UtcNow);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Frequência cardíaca deve ser maior que zero.", ex.Message);
     }
 
@@ -53,7 +54,7 @@ public class DispositivoIotTests
         var act = () => dispositivo.AtualizarLeitura(30, 95, -1m, 12.8m, DateTime.UtcNow);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Nível de atividade não pode ser negativo.", ex.Message);
     }
 

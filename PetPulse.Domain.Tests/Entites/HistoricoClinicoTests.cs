@@ -1,4 +1,5 @@
 using PetPulse.Domain.entites;
+using PetPulse.Domain.Exceptions;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Domain.Tests;
@@ -42,7 +43,7 @@ public class HistoricoClinicoTests
             null);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Descrição do histórico clínico não pode ser vazia.", ex.Message);
     }
 
@@ -97,7 +98,7 @@ public class HistoricoClinicoTests
             null);
 
         // Assert
-        var ex2 = Assert.Throws<Exception>(act);
+        var ex2 = Assert.Throws<DomainException>(act);
         Assert.Equal("Descrição do histórico clínico não pode ser vazia.", ex2.Message);
     }
 }

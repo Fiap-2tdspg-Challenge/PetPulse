@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using PetPulse.Application.DTOs;
 using PetPulse.Domain.entites;
 using PetPulse.Domain.Enum;
@@ -109,9 +110,33 @@ public class PetDtoTests
 
     private static (bool IsValid, List<ValidationResult> Results) Validar(object dto)
     {
-        var context = new ValidationContext(dto);
+        // Validator.TryValidateObject só enxerga atributos de validação em properties.
+        // Nos DTOs (records), os atributos de validação ficam no parâmetro do construtor
+        // primário — é dali que o ASP.NET Core também os lê para validar o ModelState —
+        // então a validação aqui precisa ler os atributos do mesmo lugar: os parâmetros
+        // do construtor, não as properties geradas.
         var results = new List<ValidationResult>();
-        var isValid = Validator.TryValidateObject(dto, context, results, validateAllProperties: true);
-        return (isValid, results);
+        var type = dto.GetType();
+        var constructor = type.GetConstructors()[0];
+        var context = new ValidationContext(dto);
+
+        foreach (var parameter in constructor.GetParameters())
+        {
+            var property = type.GetProperty(parameter.Name!);
+            if (property is null)
+                continue;
+
+            context.MemberName = property.Name;
+            var value = property.GetValue(dto);
+
+            foreach (var attribute in parameter.GetCustomAttributes<ValidationAttribute>(inherit: true))
+            {
+                var result = attribute.GetValidationResult(value, context);
+                if (result is not null && result != ValidationResult.Success)
+                    results.Add(result);
+            }
+        }
+
+        return (results.Count == 0, results);
     }
 }

@@ -1,4 +1,5 @@
 using PetPulse.Domain.entites;
+using PetPulse.Domain.Exceptions;
 
 namespace PetPulse.Domain.Tests;
 
@@ -33,7 +34,7 @@ public class UsuarioTests
         var act = () => usuario.AtualizarNome(nomeInvalido);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Nome do usuário não pode ser vazio.", ex.Message);
     }
 
@@ -49,7 +50,7 @@ public class UsuarioTests
         var act = () => usuario.AtualizarEmail(emailInvalido);
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("E-mail inválido.", ex.Message);
     }
 
@@ -63,7 +64,7 @@ public class UsuarioTests
         var act = () => usuario.AtualizarSenha("");
 
         // Assert
-        var ex = Assert.Throws<Exception>(act);
+        var ex = Assert.Throws<DomainException>(act);
         Assert.Equal("Senha não pode ser vazia.", ex.Message);
     }
 

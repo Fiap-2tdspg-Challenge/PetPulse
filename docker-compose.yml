@@ -42,7 +42,6 @@ services:
       - "8080:8080"
     environment:
       - ConnectionStrings__PetPulseOracle=Data Source=oracle-db:1521/XEPDB1;User ID=petpulse;Password=petpulse123;
-      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
     depends_on:
       oracle-db:

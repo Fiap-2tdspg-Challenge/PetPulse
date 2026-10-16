@@ -1,5 +1,6 @@
 ﻿using PetPulse.Domain.Commom;
 using PetPulse.Domain.Enum;
+using PetPulse.Domain.Exceptions;
 
 namespace PetPulse.Domain.entites;
 
@@ -60,7 +61,7 @@ public class Pet : BaseEntity
     public void AtualizarNome(string nome)
     {
         if (string.IsNullOrWhiteSpace(nome))
-            throw new Exception("Nome do pet não pode ser vazio.");
+            throw new DomainException("Nome do pet não pode ser vazio.");
 
         Nome = nome;
     }
@@ -68,7 +69,7 @@ public class Pet : BaseEntity
     public void AtualizarEspecie(string especie)
     {
         if (string.IsNullOrWhiteSpace(especie))
-            throw new Exception("Espécie do pet não pode ser vazia.");
+            throw new DomainException("Espécie do pet não pode ser vazia.");
 
         Especie = especie;
     }
@@ -81,7 +82,7 @@ public class Pet : BaseEntity
     public void AtualizarDataNascimento(DateOnly? dataNascimento)
     {
         if (dataNascimento.HasValue && dataNascimento.Value > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new Exception("Data de nascimento não pode ser futura.");
+            throw new DomainException("Data de nascimento não pode ser futura.");
 
         DataNascimento = dataNascimento;
     }
@@ -89,7 +90,7 @@ public class Pet : BaseEntity
     public void AtualizarPeso(decimal? peso)
     {
         if (peso.HasValue && peso.Value <= 0)
-            throw new Exception("Peso deve ser maior que zero.");
+            throw new DomainException("Peso deve ser maior que zero.");
 
         Peso = peso;
     }

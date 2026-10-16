@@ -2,6 +2,10 @@
 
 > API RESTful de saúde preditiva para pets, desenvolvida em ASP.NET Core com Oracle Database.
 
+## Membros 
+Pietro Paranhos Wilhelm rm561378
+João Vitor Biribilli rm565594
+Gabriel Neris Losano rm564093
 ---
 
 ## Sumário
@@ -90,6 +94,7 @@ PetPulse
 ├── PetPulse.Domain
 ├── PetPulse.Infrastructure
 ├── PetPulse.API.Tests
+├── PetPulse.Application.Tests
 ├── PetPulse.Domain.Tests
 └── PetPulse.Infrastructure.Tests
 ```
@@ -354,6 +359,61 @@ Logs estruturados com Serilog, com dois destinos configurados:
 
 Níveis utilizados: `Information` (fluxo normal), `Warning` (situações não críticas) e `Error` (falhas). Cada linha de log de requisição (`UseSerilogRequestLogging`) é correlacionada com o `TraceId`/`SpanId` da requisição via `Serilog.Enrichers.Span`, permitindo cruzar um log específico com o trace distribuído correspondente.
 
+Além do trace/span, toda requisição também recebe um **id de correlação de requisição** (`CorrelationIdMiddleware`): reaproveitado do header `X-Correlation-Id` quando o cliente já envia um, ou gerado como um novo Guid caso contrário. Esse id é devolvido no header `X-Correlation-Id` da resposta e injetado no Serilog `LogContext`, aparecendo em toda linha de log daquela requisição (inclusive no resumo gerado pelo `UseSerilogRequestLogging`) — útil para localizar rapidamente todos os logs de uma requisição específica, sem depender só do trace distribuído.
+
+### Tratamento de exceções
+
+Qualquer exceção não tratada que escape de um controller é capturada globalmente pelo `GlobalExceptionHandler` (`IExceptionHandler`, registrado via `AddExceptionHandler` + `UseExceptionHandler`, como primeiro middleware da pipeline). Em vez de devolver todo erro como um `500` genérico, o handler mapeia o **tipo** da exceção para o status HTTP correspondente:
+
+| Tipo de exceção | Status | Título |
+|---|---|---|
+| `ArgumentNullException` / `ArgumentException` | 400 | Requisição inválida |
+| `DomainException` (regra de negócio violada no Domain) | 400 | Não foi possível concluir a operação |
+| `InvalidOperationException` | 400 | Não foi possível concluir a operação |
+| `KeyNotFoundException` | 404 | Recurso não encontrado |
+| `UnauthorizedAccessException` | 401 | Não autorizado |
+| `OracleException` (falha de acesso ao banco) | 502 | Banco indisponível |
+| Qualquer outra exceção não mapeada | 500 | Erro interno do servidor |
+
+`DomainException` é uma exceção própria do `PetPulse.Domain` (`PetPulse.Domain.Exceptions.DomainException`), lançada pelas entidades ao violar uma regra de negócio (ex.: `Nome do pet não pode ser vazio.`, `Frequência cardíaca deve ser maior que zero.`). Como o handler global já mapeia esse tipo para `400`, nenhum controller precisa de `try/catch` para isso — uma chamada como `pet.AtualizarPeso(request.Peso)` que viole uma regra é automaticamente convertida em uma resposta `400` estruturada, em vez de um `500` cru.
+
+> Essas respostas mapeadas só aparecem quando `ASPNETCORE_ENVIRONMENT` **não** é literalmente `Development` — veja a observação em [Variáveis de ambiente](#variáveis-de-ambiente) para o motivo.
+
+Além de mapear o status, o handler:
+
+- Registra a exceção no log estruturado (nível `Error`), com o `TraceId` da requisição;
+- Devolve ao cliente uma resposta no formato `ProblemDetails` (RFC 7807), com `Content-Type: application/problem+json`;
+- Expõe `traceId` (id de trace do ASP.NET Core) no corpo da resposta **apenas em ambiente de desenvolvimento**, para facilitar localizar a requisição nos logs durante o desenvolvimento;
+- Expõe `correlationId` no corpo da resposta **sempre que presente** (inclusive em produção) — esse é o id de correlação de ponta a ponta gerado/propagado pelo `CorrelationIdMiddleware`, usado para localizar a requisição nos logs estruturados do Serilog;
+- No caso de exceções não mapeadas, nunca expõe a mensagem real da exceção no corpo da resposta (nem em desenvolvimento), apenas uma mensagem genérica — o detalhe técnico fica só no log do servidor.
+
+Exemplo de resposta para uma regra de domínio violada (`DomainException`, ambiente de desenvolvimento):
+
+```json
+{
+  "type": "about:blank",
+  "title": "Não foi possível concluir a operação",
+  "status": 400,
+  "detail": "Frequência cardíaca deve ser maior que zero.",
+  "instance": "/api/dispositivoiot/3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "traceId": "0HN8K2...",
+  "correlationId": "b3b3f6d2-4b1e-4e9a-9c3a-7a2f9e1d0c5a"
+}
+```
+
+Exemplo de resposta para uma exceção não mapeada (produção — sem `traceId`, sem detalhe técnico):
+
+```json
+{
+  "type": "about:blank",
+  "title": "Erro interno do servidor",
+  "status": 500,
+  "detail": "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+  "instance": "/api/pets",
+  "correlationId": "b3b3f6d2-4b1e-4e9a-9c3a-7a2f9e1d0c5a"
+}
+```
+
 ---
 
 ## Testes automatizados
@@ -363,7 +423,8 @@ A solução conta com testes automatizados em **xUnit**, organizados por camada 
 | Projeto de teste | Camada testada | O que cobre |
 |---|---|---|
 | `PetPulse.Domain.Tests` | Domínio | Regras de negócio das entidades `Usuario`, `Pet`, `HistoricoClinico`, `DispositivoIot` e `AlertaInteligente` — construção, validações de guarda (ex.: nome vazio, peso negativo, data futura) e os métodos `AtualizarDados` de cada entidade |
-| `PetPulse.API.Tests` | API / Controllers | Os 5 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`), com os repositórios isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`) |
+| `PetPulse.Application.Tests` | Application (DTOs) | Mapeamento `ToDomain()`/`FromDomain()` e validação (`DataAnnotations`) dos DTOs de request/response das 5 entidades |
+| `PetPulse.API.Tests` | API / Controllers / Middlewares | Os 5 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`), com os repositórios isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`). Também cobre o `CorrelationIdMiddleware` e o `GlobalExceptionHandler` |
 | `PetPulse.Infrastructure.Tests` | Infraestrutura | As implementações EF Core dos 5 repositórios (`PetRepository`, `UsuarioRepository`, `HistoricoClinicoRepository`, `DispositivoIotRepository`, `AlertaInteligenteRepository`), usando `Microsoft.EntityFrameworkCore.InMemory`. Cobre persistência (`Add`/`Update`/`Delete`), buscas por relacionamento (ex.: pets de um usuário, histórico de um pet) e regras como a checagem case-insensitive de e-mail |
 
 ### Executando os testes
@@ -378,6 +439,7 @@ Rodar um projeto de teste específico:
 
 ```powershell
 dotnet test PetPulse.Domain.Tests\PetPulse.Domain.Tests.csproj
+dotnet test PetPulse.Application.Tests\PetPulse.Application.Tests.csproj
 dotnet test PetPulse.API.Tests\PetPulse.API.Tests.csproj
 dotnet test PetPulse.Infrastructure.Tests\PetPulse.Infrastructure.Tests.csproj
 ```
@@ -670,8 +732,10 @@ A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-comp
 | Variável | Valor padrão | Descrição |
 |---|---|---|
 | `ConnectionStrings__PetPulseOracle` | _(vazio)_ | Connection string do Oracle |
-| `ASPNETCORE_ENVIRONMENT` | `Development` | Ambiente de execução |
+| `ASPNETCORE_ENVIRONMENT` | `Local` (localmente) / `Production` (nuvem) | Ambiente de execução — propositalmente nunca `Development`, veja observação abaixo |
 | `ASPNETCORE_URLS` | `http://+:8080` | URL de escuta da API |
+
+> **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso tanto o `launchSettings.json` (execução local com `dotnet run`) quanto o `docker-compose.yml` usam `ASPNETCORE_ENVIRONMENT=Local` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
 
 
 ---

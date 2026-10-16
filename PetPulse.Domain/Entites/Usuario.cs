@@ -1,4 +1,5 @@
 ﻿using PetPulse.Domain.Commom;
+using PetPulse.Domain.Exceptions;
 
 namespace PetPulse.Domain.entites;
 
@@ -40,7 +41,7 @@ public class Usuario : BaseEntity
     public void AtualizarNome(string nome)
     {
         if (string.IsNullOrWhiteSpace(nome))
-            throw new Exception("Nome do usuário não pode ser vazio.");
+            throw new DomainException("Nome do usuário não pode ser vazio.");
 
         Nome = nome;
     }
@@ -48,7 +49,7 @@ public class Usuario : BaseEntity
     public void AtualizarCpf(string cpf)
     {
         if (string.IsNullOrWhiteSpace(cpf))
-            throw new Exception("CPF não pode ser vazio.");
+            throw new DomainException("CPF não pode ser vazio.");
 
         Cpf = cpf;
     }
@@ -56,7 +57,7 @@ public class Usuario : BaseEntity
     public void AtualizarEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
-            throw new Exception("E-mail inválido.");
+            throw new DomainException("E-mail inválido.");
 
         Email = email;
     }
@@ -64,7 +65,7 @@ public class Usuario : BaseEntity
     public void AtualizarSenha(string senha)
     {
         if (string.IsNullOrWhiteSpace(senha))
-            throw new Exception("Senha não pode ser vazia.");
+            throw new DomainException("Senha não pode ser vazia.");
 
         Senha = senha;
     }
