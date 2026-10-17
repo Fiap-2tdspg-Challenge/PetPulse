@@ -13,6 +13,17 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Segredos (connection string do Oracle e chave JWT) não ficam no appsettings.json versionado.
+// Localmente eles vêm do User Secrets do .NET ("dotnet user-secrets set ..."), que fica fora do
+// repositório. O ASP.NET Core só carrega User Secrets sozinho quando o ambiente é "Development",
+// e este projeto roda localmente como "Local" (ver o comentário do UseExceptionHandler abaixo),
+// por isso o carregamento é explícito aqui. Na nuvem, os mesmos valores chegam por variável de
+// ambiente (ConnectionStrings__PetPulseOracle e Jwt__Key), definidas como secretas na pipeline.
+if (builder.Environment.IsEnvironment("Local"))
+{
+    builder.Configuration.AddUserSecrets<Program>(optional: true);
+}
+
 builder.Host.UseSerilog((context, configuration) => configuration
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)

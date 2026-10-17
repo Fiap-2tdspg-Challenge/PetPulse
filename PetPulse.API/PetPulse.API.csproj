@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>PetPulse</RootNamespace>
+        <UserSecretsId>c2a7b281-8a8c-4f86-a3aa-301e8e998dd8</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>

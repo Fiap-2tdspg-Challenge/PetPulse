@@ -247,23 +247,18 @@ Ou seja:
 
 ## Configuração do banco Oracle
 
-A connection string deve ser configurada no arquivo `appsettings.json` ou `appsettings.Development.json`.
+A connection string **não fica versionada** no `appsettings.json` — senhas e chaves nunca vão para o GitHub. A API lê a chave `ConnectionStrings:PetPulseOracle`, que vem de um destes lugares conforme a forma de execução:
 
-Exemplo:
+| Onde a API roda | De onde vem a connection string |
+|---|---|
+| Local, com `dotnet run` | **User Secrets** do .NET — arquivo fora do repositório, só na sua máquina (ver Opção 1 em "Como executar") |
+| Local, com Docker Compose | Arquivo `.env` (no `.gitignore`), lido pelo `docker-compose.yml` (ver Opção 2) |
+| Nuvem (Azure) | Variável de ambiente `ConnectionStrings__PetPulseOracle`, definida como **secreta** (cadeado) na pipeline do Azure DevOps |
 
-```json
-{
-  "ConnectionStrings": {
-    "PetPulseOracle": "Data Source=oracle.fiap.com.br:1521/orcl;User ID=SEU_USUARIO;Password=SUA_SENHA;"
-  },
-  "Swagger": {
-    "Title": "PetPulse API",
-    "Version": "v1",
-    "Description": "API para acompanhamento preventivo da saúde de pets.",
-    "OpenApiDocumentName": "v1",
-    "SwaggerUiDocumentTitle": "PetPulse API v1"
-  }
-}
+Formato da connection string (Oracle FIAP):
+
+```text
+Data Source=oracle.fiap.com.br:1521/orcl;User ID=SEU_RM;Password=SUA_SENHA;
 ```
 
 ---
@@ -454,7 +449,7 @@ POST /api/auth/login
 
 ### Configuração
 
-A chave de assinatura vem da seção `Jwt` do `appsettings.json` (`Jwt:Key`, `Jwt:Issuer`, `Jwt:Audience`). Em produção a chave não fica no `appsettings.json`: o `azure-cli.sh` gera uma aleatória, grava no Key Vault (segredo `jwt-key`) e a injeta como variável de ambiente segura (`Jwt__Key`) no container da API — do mesmo jeito que a connection string do Oracle.
+`Jwt:Issuer` e `Jwt:Audience` ficam no `appsettings.json`. A chave de assinatura (`Jwt:Key`) é um segredo e **não** fica versionada: localmente vem do User Secrets (`dotnet run`) ou do arquivo `.env` (Docker Compose); na nuvem chega como variável de ambiente secreta `Jwt__Key`, definida com cadeado na pipeline do Azure DevOps (ou gravada no Key Vault, segredo `jwt-key`, pelo `azure-cli.sh` no deploy via ACI).
 
 
 ---
@@ -508,17 +503,20 @@ git clone https://github.com/PietroWilhelm/PetPulse.git
 cd PetPulse
 ```
 
-**2. Configure a connection string**
+**2. Configure os segredos locais (User Secrets)**
 
-Edite `PetPulse.API/appsettings.Development.json` com os dados do seu banco:
+A connection string e a chave JWT não ficam no `appsettings.json`. Localmente elas ficam no **User Secrets** do .NET, um arquivo fora do repositório (`%APPDATA%\Microsoft\UserSecrets\` no Windows, `~/.microsoft/usersecrets/` no Linux/macOS):
 
-```json
-{
-  "ConnectionStrings": {
-    "PetPulseOracle": "Data Source=oracle.fiap.com.br:1521/orcl;User ID=SEU_USUARIO;Password=SUA_SENHA;"
-  }
-}
+```powershell
+cd PetPulse.API
+dotnet user-secrets set "ConnectionStrings:PetPulseOracle" "Data Source=oracle.fiap.com.br:1521/orcl;User ID=SEU_RM;Password=SUA_SENHA;"
+dotnet user-secrets set "Jwt:Key" "UMA-CHAVE-ALEATORIA-COM-PELO-MENOS-32-CARACTERES"
+cd ..
 ```
+
+Para conferir o que está configurado: `dotnet user-secrets list --project PetPulse.API`.
+
+> Os User Secrets são carregados quando a API roda com `ASPNETCORE_ENVIRONMENT=Local`, que é o padrão do `launchSettings.json`.
 
 **3. Execute a API**
 
@@ -551,7 +549,21 @@ git clone https://github.com/PietroWilhelm/PetPulse.git
 cd PetPulse
 ```
 
-**2. Suba os containers**
+**2. Crie o arquivo `.env` com as senhas locais**
+
+As senhas do Oracle local e a chave JWT não ficam no `docker-compose.yml`: ele as lê de um arquivo `.env`, que está no `.gitignore` e nunca vai para o GitHub. Copie o modelo e preencha os valores:
+
+```bash
+cp .env.example .env
+```
+
+```text
+ORACLE_PASSWORD=senha-do-usuario-sys-do-oracle-local
+ORACLE_APP_PASSWORD=senha-do-usuario-petpulse
+JWT_KEY=uma-chave-aleatoria-com-pelo-menos-32-caracteres
+```
+
+**3. Suba os containers**
 
 ```bash
 docker compose up -d
@@ -564,7 +576,7 @@ Isso irá:
 - Inicializar o Oracle XE (aguarde ~2 minutos para o healthcheck passar)
 - Subir a API na porta `8080`
 
-**3. Verifique se os containers estão saudáveis**
+**4. Verifique se os containers estão saudáveis**
 
 ```bash
 docker ps
@@ -572,13 +584,13 @@ docker ps
 
 Aguarde o `oracle-db` aparecer com status `(healthy)` antes de usar a API.
 
-**4. Acesse o Swagger**
+**5. Acesse o Swagger**
 
 ```
 http://localhost:8080/swagger
 ```
 
-**5. Parar os containers**
+**6. Parar os containers**
 
 ```bash
 docker compose down
@@ -770,18 +782,18 @@ az group delete --name "rg-challenge-clyvo-vet" --yes --no-wait
 
 ## Variáveis de ambiente
 
-A API aceita as seguintes variáveis de ambiente, configuráveis no `docker-compose.yml` ou no `appsettings.json`:
+A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connection string e chave JWT) nunca ficam versionados no `appsettings.json`: localmente vêm do User Secrets (`dotnet run`) ou do arquivo `.env` (Docker Compose), e na nuvem de variáveis secretas da pipeline do Azure DevOps (ou do Key Vault):
 
 | Variável | Valor padrão | Descrição |
 |---|---|---|
-| `ConnectionStrings__PetPulseOracle` | _(vazio)_ | Connection string do Oracle |
+| `ConnectionStrings__PetPulseOracle` | _(nenhum — obrigatória)_ | Connection string do Oracle. Local: User Secrets ou `.env`; nuvem: variável secreta da pipeline |
 | `ASPNETCORE_ENVIRONMENT` | `Local` (localmente) / `Production` (nuvem) | Ambiente de execução — propositalmente nunca `Development`, veja observação abaixo |
 | `ASPNETCORE_URLS` | `http://+:8080` | URL de escuta da API |
-| `Jwt__Key` | _(valor de desenvolvimento no `appsettings.json`)_ | Chave de assinatura dos tokens JWT — em produção vem do Key Vault (segredo `jwt-key`), gerada pelo `azure-cli.sh` |
+| `Jwt__Key` | _(nenhum — obrigatória)_ | Chave de assinatura dos tokens JWT (mín. 32 caracteres). Local: User Secrets ou `.env`; nuvem: variável secreta da pipeline (ou Key Vault, segredo `jwt-key`) |
 | `Jwt__Issuer` | `PetPulse` | Emissor (`iss`) do token JWT |
 | `Jwt__Audience` | `PetPulse.API` | Público-alvo (`aud`) do token JWT |
 
-> **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso tanto o `launchSettings.json` (execução local com `dotnet run`) quanto o `docker-compose.yml` usam `ASPNETCORE_ENVIRONMENT=Local` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
+> **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso o `launchSettings.json` (execução local com `dotnet run`) usa `ASPNETCORE_ENVIRONMENT=Local`, e a imagem Docker (`dockerfile`, usada pelo Docker Compose e pelo ACI) usa `Production` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
 
 
 ---

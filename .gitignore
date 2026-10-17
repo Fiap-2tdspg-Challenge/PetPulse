@@ -1,0 +1,29 @@
+# =============================================================
+# PetPulse – arquivos que NÃO devem ir para o Git
+# =============================================================
+
+# Saídas de build do .NET
+bin/
+obj/
+[Tt]est[Rr]esults/
+*.trx
+
+# Logs gerados pela aplicação (Serilog)
+logs/
+*.log
+
+# IDEs e arquivos por usuário
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.DotSettings.user
+
+# Segredos locais — nunca versionar
+.env
+secrets.json
+
+# Arquivos temporários de trabalho
+_claude*/
+_claude*.zip
