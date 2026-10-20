@@ -8,14 +8,6 @@ namespace PetPulse.Infrastructure.Repositories;
 
 public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioRepository
 {
-    public IReadOnlyList<Usuario> GetAll()
-    {
-        return context.Usuarios
-            .AsNoTracking()
-            .OrderBy(usuario => usuario.Nome)
-            .ToList();
-    }
-
     public (IReadOnlyList<Usuario> Items, int Total) GetPaged(UsuarioQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);

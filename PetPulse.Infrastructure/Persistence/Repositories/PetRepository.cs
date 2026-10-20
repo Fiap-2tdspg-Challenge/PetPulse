@@ -11,14 +11,6 @@ namespace PetPulse.Infrastructure.Repositories;
 /// </summary>
 public sealed class PetRepository(PetPulseContext context) : IPetRepository
 {
-    public IReadOnlyList<Pet> GetAll()
-    {
-        return context.Pets
-            .AsNoTracking()
-            .OrderBy(pet => pet.Nome)
-            .ToList();
-    }
-
     public (IReadOnlyList<Pet> Items, int Total) GetPaged(PetQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);

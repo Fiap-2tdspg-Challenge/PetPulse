@@ -19,9 +19,8 @@
 - [MongoDB — histórico de leituras IoT](#mongodb--histórico-de-leituras-iot)
 - [Paginação, ordenação, filtros e HATEOAS](#paginação-ordenação-filtros-e-hateoas)
 - [Testes automatizados](#testes-automatizados)
-- [Arquitetura de Deploy (ACR + ACI + Key Vault)](#arquitetura-de-deploy-acr--aci--key-vault)
 - [Como executar](#como-executar)
-- [Deploy em Nuvem (ACR + ACI + Key Vault)](#deploy-em-nuvem-acr--aci--key-vault)
+- [Deploy em Nuvem (CI/CD com Azure DevOps)](#deploy-em-nuvem-cicd-com-azure-devops)
 - [Portas e serviços](#portas-e-serviços)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Endpoints disponíveis](#endpoints-disponíveis)
@@ -78,8 +77,9 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 * Microsoft.EntityFrameworkCore.InMemory (testes de repositório)
 * Rider / Visual Studio
 * Docker / Docker Compose
-* Azure CLI / Microsoft Azure
-* Azure Container Registry (ACR) / Azure Container Instances (ACI)
+* Azure CLI / Microsoft Azure (App Service)
+* Azure DevOps (Azure Pipelines — CI/CD)
+* MongoDB Atlas
 
 ---
 
@@ -454,7 +454,7 @@ POST /api/auth/login
 
 ### Configuração
 
-`Jwt:Issuer` e `Jwt:Audience` ficam no `appsettings.json`. A chave de assinatura (`Jwt:Key`) é um segredo e **não** fica versionada: localmente vem do User Secrets (`dotnet run`) ou do arquivo `.env` (Docker Compose); na nuvem chega como variável de ambiente secreta `Jwt__Key`, definida com cadeado na pipeline do Azure DevOps (ou gravada no Key Vault, segredo `jwt-key`, pelo `azure-cli.sh` no deploy via ACI).
+`Jwt:Issuer` e `Jwt:Audience` ficam no `appsettings.json`. A chave de assinatura (`Jwt:Key`) é um segredo e **não** fica versionada: localmente vem do User Secrets (`dotnet run`) ou do arquivo `.env` (Docker Compose); na nuvem chega como variável de ambiente secreta `Jwt__Key`, definida com cadeado na pipeline do Azure DevOps.
 
 
 ---
@@ -633,11 +633,6 @@ dotnet test PetPulse.Infrastructure.Tests\PetPulse.Infrastructure.Tests.csproj
 > Convenção de nomenclatura dos testes: `MetodoTestado_Cenario_ResultadoEsperado` (ex.: `Create_ComEmailJaCadastrado_DeveRetornarBadRequestENaoPersistir`), seguindo o padrão AAA (Arrange/Act/Assert).
 
 ---
-## Arquitetura de Deploy (ACR + ACI + Key Vault)
-![alt text](<Screenshot 2026-09-05 152950.png>)
-
-
-
 ## Como executar
 
 ### Opção 1 — Localmente com .NET (requer Oracle externo)
@@ -752,170 +747,67 @@ docker compose down
 > ```
 ---
 
-## Deploy em Nuvem (ACR + ACI + Key Vault)
+## Deploy em Nuvem (CI/CD com Azure DevOps)
 
-Além das opções locais (Opção 1), Docker Compose (Opção 2) e VM no Azure (Opção 3), a API também pode ser publicada de forma **serverless** no Azure — 100% containerizada, tanto a API quanto o banco Oracle, sem misturar com nenhum serviço PaaS (banco gerenciado), conforme exigido pela documentação do Challenge. A arquitetura usa três serviços:
+A API é publicada no **Azure App Service (Web App)** por uma pipeline YAML do **Azure DevOps** (`azure-pipelines.yml`, na raiz). Cada push na branch `main` dispara a pipeline, que cria a infraestrutura (se ainda não existir), compila, roda os testes automatizados e faz o deploy — sem nenhum passo manual.
 
-- **Azure Container Registry (ACR)** — guarda a imagem Docker da API.
-- **Azure Container Instances (ACI)** — dois containers independentes, cada um com seu próprio FQDN público: um para a API e outro para o banco Oracle (`gvenzl/oracle-xe`, a mesma imagem usada localmente no `docker-compose.yml`).
-- **Azure Key Vault** — guarda todas as senhas e credenciais (senha do Oracle, senha do usuário da aplicação, usuário/senha do ACR). Nenhuma credencial fica em texto puro no script, no container ou no repositório.
-
-> O Oracle roda **sem persistência em disco** (sem Azure File Share/volume) — de propósito. O Oracle XE não tolera bem um shutdown "sujo" quando os dados estão em um volume persistido (gera `ORA-01081: cannot start already-running ORACLE`), então trocamos persistência por simplicidade e confiabilidade. Isso está dentro da regra do Challenge, que exige o banco **containerizado**, mas não exige persistência entre reinícios. Se o container do Oracle for recriado, basta rodar o `script_bd.sql` de novo (veja a seção abaixo).
+- **API em produção:** `https://petpulse-rm561378.azurewebsites.net/swagger`
+- **Health check:** `https://petpulse-rm561378.azurewebsites.net/health`
 
 ### Fluxo
 
 ```text
-Docker Hub (imagem já publicada) → docker pull/tag/push → Azure Container Registry (ACR)
-                                                                     │
-                                                                     ▼
-Azure Key Vault (senhas/credenciais) ──────────► Azure Container Instance – API (petpulse-api)
-                                       └────────► Azure Container Instance – Oracle (petpulse-oracle-db)
+git push (main)
+   │
+   ▼
+Stage CI ─ Job "Criar Infra Inicial" (ubuntu, Azure CLI → infra-webapp.sh)
+   │         • Oracle FIAP: cria as tabelas do script_bd.sql só se ainda não existirem
+   │         • Azure: cria/reaproveita Resource Group, Plano (Windows, F1) e Web App
+   │
+   ├────── Job "Build and Test" (windows, .NET 10)
+   │         • restore → build (Release) → testes (xUnit) com cobertura
+   │         • publish da PetPulse.API → artefato "app" (.zip)
+   ▼
+Stage CD ─ Deployment "DeployWebApp" (environment "producao")
+             • baixa o artefato "app" e publica no Web App (AzureWebApp@1)
+             • grava as App Settings com as variáveis secretas da pipeline
+   │
+   ▼
+Azure Web App (petpulse-rm561378) ──► Oracle FIAP (dados relacionais)
+                                  └─► MongoDB Atlas (histórico de leituras IoT)
 ```
 
-A imagem da API usada é a mesma publicada no Docker Hub (`pietrowilhelm/challenge-clyvo-vet:latest`, gerada a partir do `dockerfile` na raiz do projeto). O script `azure-cli.sh` automatiza todo o processo: cria o Resource Group, o ACR, o Key Vault, sobe os dois containers (Oracle e API) e conecta tudo.
+O stage **CD** só roda quando o **CI** termina com sucesso; se um teste falhar, nada é publicado.
 
+### Recursos no Azure
 
-
-### Clone o repositório
-
-```bash
-git clone https://github.com/PietroWilhelm/PetPulse.git
-cd PetPulse
-```
-
-### Pré-requisitos
-
-- Azure CLI instalado e autenticado (`az login`)
-- Docker Desktop **aberto** (necessário para `docker pull`/`tag`/`push` no ACR)
-- Duas senhas exportadas como variável de ambiente **antes** de rodar o script — nunca deixe senhas escritas no script ou no código-fonte; elas só existem no shell local e são gravadas diretamente no Key Vault:
-
-```bash
-export ORACLE_PASSWORD='senha_do_usuario_sys_do_oracle'
-export ORACLE_APP_PASSWORD='senha_do_usuario_petpulse_no_oracle'
-```
-
-- No Git Bash (Windows), exporte também a variável abaixo antes de rodar o script, para evitar que o Git Bash reescreva argumentos como `/subscriptions/...` como se fossem caminhos do Windows:
-
-```bash
-export MSYS_NO_PATHCONV=1
-```
-
-### Executando o deploy
-
-```bash
-chmod +x azure-cli.sh
-./azure-cli.sh
-```
-
-O script é idempotente — pode ser executado mais de uma vez sem recriar recursos já existentes — e faz, na ordem:
-
-| Passo | O que faz |
+| Recurso | Nome |
 |---|---|
-| 1 | Reaproveita o Resource Group `rg-challenge-clyvo-vet` (cria se não existir) |
-| 2 | Registra os providers `Microsoft.ContainerRegistry`, `Microsoft.ContainerInstance` e `Microsoft.KeyVault` na assinatura (necessário ao menos uma vez; em assinaturas Azure para Estudantes eles geralmente não vêm habilitados por padrão) |
-| 3 | Cria o Azure Container Registry `petpulse` (SKU Basic) e recupera `loginServer` + credenciais |
-| 4 | Faz login no ACR, puxa a imagem do Docker Hub, retagueia como `petpulse.azurecr.io/petpulse-api:v1` e sobe (push) |
-| 5 | Cria o Key Vault `petpulse-kv`, concede à sua conta o papel **Key Vault Administrator** (com espera automática pela propagação do RBAC) e grava os segredos `oracle-password`, `oracle-app-password`, `acr-username`, `acr-password` |
-| 6 | Recria do zero a ACI do Oracle (`petpulse-oracle-db`, sem volume), lendo a senha diretamente do Key Vault como `--secure-environment-variables` |
-| 7 | Aguarda o Oracle sinalizar `DATABASE IS READY TO USE` nos logs (poll a cada 15s, até 15 minutos) em vez de um `sleep` fixo |
-| 8 | Recria do zero a ACI da API (`petpulse-api`), lendo credenciais do ACR e a connection string do Oracle do Key Vault, também como `--secure-environment-variables` |
+| Grupo de recursos | `rg-petpulse-win` |
+| Plano do App Service | `plan-petpulse-win` (Windows, SKU F1) |
+| Web App | `petpulse-rm561378` (runtime .NET 10) |
 
-Todas as senhas usadas na criação dos containers (`ORACLE_PASSWORD`, `APP_USER_PASSWORD`, `ConnectionStrings__PetPulseOracle`, credenciais do ACR) são passadas como **secure environment variables** (`--secure-environment-variables`), que a Azure mantém criptografadas e não expõe em `az container show` — nunca em texto puro.
+Os recursos são criados pelo `infra-webapp.sh`, que é idempotente: em cada execução ele reaproveita o que já existe e nunca apaga nem altera dados do banco.
 
-### Acessando a API na nuvem
+### Configuração no Azure DevOps
 
-Ao final da execução, o script imprime os FQDNs gerados (API e Oracle) e os endpoints de observabilidade:
+1. **Service connection** do tipo *Azure Resource Manager* chamada `PetPulseAzure` (usada pelas tarefas Azure CLI e Azure Web App).
+2. **Environment** `producao` (Pipelines → Environments), usado pelo stage CD.
+3. **Variáveis secretas** (botão *Variables* da pipeline, com cadeado) — nunca declaradas no YAML:
 
-```
-http://<API_FQDN>:8080/swagger
-http://<API_FQDN>:8080/health
-http://<API_FQDN>:8080/metrics
-```
+| Variável | Uso |
+|---|---|
+| `ORACLE_PASS` | Senha do Oracle, usada pelo `infra-webapp.sh` para criar as tabelas |
+| `OracleConnection` | Connection string do Oracle → App Setting `ConnectionStrings__PetPulseOracle` |
+| `MongoConnection` | Connection string do MongoDB Atlas → App Setting `ConnectionStrings__PetPulseMongo` |
+| `JwtKey` | Chave de assinatura dos tokens JWT → App Setting `Jwt__Key` |
 
-### Aplicando o script_bd.sql no Oracle da nuvem
+As variáveis não secretas (host/porta/SID/usuário do Oracle, nome do Web App e região) ficam no bloco `variables` do `azure-pipelines.yml`.
 
-Como o container do Oracle não usa volume persistente, sempre que ele for (re)criado é preciso rodar o `script_bd.sql` de novo para criar as tabelas. Há duas formas de fazer isso; ambas usam apenas ferramentas já disponíveis (Azure CLI/Portal e o `sqlplus` embutido na própria imagem do Oracle).
-
-#### Opção A — direto de dentro do container do Oracle (recomendada)
-
-Não depende do Docker local nem de instalar nada extra — só do `az container exec` (ou do Console do Portal). Funciona porque a imagem `gvenzl/oracle-xe` já vem com o `sqlplus` instalado.
-
-**1. Abra uma sessão dentro do container do Oracle:**
+### Excluindo a infraestrutura ao final
 
 ```bash
-az container exec --resource-group rg-challenge-clyvo-vet --name petpulse-oracle-db --exec-command "/bin/bash"
-```
-
-Ou pelo Portal do Azure: recurso `petpulse-oracle-db` → aba **Containers** → sub-aba **Console** → escolha `/bin/bash` → Conectar. Fica ainda melhor para o vídeo de demonstração, já que mostra visualmente a execução dentro do Azure.
-
-**2. Conecte no banco com o SQL\*Plus**:
-
-```bash
-sqlplus petpulse@localhost:1521/XEPDB1
-```
-
-Quando pedir `Enter password:`, digite a senha do usuário `petpulse` (a mesma gravada como `oracle-app-password` no Key Vault).
-
-**3. Cole o conteúdo inteiro do `script_bd.sql`** no prompt `SQL>` (abra o arquivo no editor, copie tudo e cole). O SQL\*Plus executa cada comando terminado em `;` em sequência, criando as 5 tabelas e aplicando os `COMMENT ON`.
-
-**4. Confirme que as tabelas foram criadas:**
-
-```sql
-SELECT table_name FROM user_tables WHERE table_name LIKE 'PP_%' ORDER BY table_name;
-```
-
-Deve listar as 5: `PP_AlertasInteligentes`, `PP_DispositivoIots`, `PP_HistoricoClinicos`, `PP_Pets`, `PP_Usuarios`.
-
-**5. Saia:**
-
-```sql
-exit;
-```
-
-e depois `exit` de novo para sair do shell do container.
-
-> Se colar o arquivo inteiro de uma vez engasgar no console do navegador (paste muito longo em consoles web pode derrubar caracteres), cole em blocos menores — por exemplo, uma `CREATE TABLE` de cada vez — e rode o `SELECT` do passo 4 no final para confirmar que as 5 tabelas foram criadas. Pelo terminal local (`az container exec` fora do Portal) isso raramente acontece.
-
-### Solução de problemas comuns
-
-**`(ConflictError) A vault with the same name already exists in deleted state`** ao rodar o passo 5 (criação do Key Vault): isso acontece porque o Azure Key Vault tem *soft-delete* — se o Resource Group já foi apagado e recriado antes, o `petpulse-kv` antigo continua existindo num estado "excluído temporariamente" por um período de retenção, e bloqueia a criação de outro com o mesmo nome. Como não há nada para recuperar (as senhas serão regravadas do zero mesmo), a solução é purgar o vault antigo para liberar o nome:
-
-```bash
-az keyvault purge --name petpulse-kv --location southafricanorth
-```
-
-Depois é só rodar `./azure-cli.sh` de novo — ele reaproveita o Resource Group e o ACR (que já existem) e segue direto para criar o Key Vault normalmente.
-
-### Comandos úteis
-
-```bash
-# Ver logs dos containers
-az container logs --resource-group rg-challenge-clyvo-vet --name petpulse-api
-az container logs --resource-group rg-challenge-clyvo-vet --name petpulse-oracle-db
-
-# Logs em tempo real
-az container logs --resource-group rg-challenge-clyvo-vet --name petpulse-api --follow
-
-# Executar um comando dentro do container
-az container exec --resource-group rg-challenge-clyvo-vet --name petpulse-api --exec-command "/bin/bash"
-
-# Ver os segredos gravados no Key Vault (sem exibir o valor)
-az keyvault secret list --vault-name petpulse-kv --output table
-
-# Parar de cobrar pelos containers sem perder a imagem no ACR nem os segredos no Key Vault
-az container delete --resource-group rg-challenge-clyvo-vet --name petpulse-api --yes
-az container delete --resource-group rg-challenge-clyvo-vet --name petpulse-oracle-db --yes
-
-# Listar as imagens/tags disponíveis no ACR
-az acr repository show-tags --name petpulse --repository petpulse-api
-```
-
-> Importante: as ACIs permanecem rodando (e gerando consumo do crédito da assinatura) até serem deletadas. Se não estiver testando ativamente, use os comandos `az container delete` acima para parar a cobrança — a imagem continua guardada no ACR e os segredos continuam no Key Vault, então rodar `./azure-cli.sh` de novo recria os dois containers do zero (lembrando que o Oracle volta vazio, sendo necessário rodar o `script_bd.sql` novamente).
-
-### Deletando toda a infraestrutura da nuvem ao final
-
-```bash
-az group delete --name "rg-challenge-clyvo-vet" --yes --no-wait
+az group delete --name "rg-petpulse-win" --yes --no-wait
 ```
 
 ---
@@ -932,20 +824,20 @@ az group delete --name "rg-challenge-clyvo-vet" --yes --no-wait
 
 ## Variáveis de ambiente
 
-A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connection string e chave JWT) nunca ficam versionados no `appsettings.json`: localmente vêm do User Secrets (`dotnet run`) ou do arquivo `.env` (Docker Compose), e na nuvem de variáveis secretas da pipeline do Azure DevOps (ou do Key Vault):
+A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connection string e chave JWT) nunca ficam versionados no `appsettings.json`: localmente vêm do User Secrets (`dotnet run`) ou do arquivo `.env` (Docker Compose), e na nuvem de variáveis secretas da pipeline do Azure DevOps:
 
 | Variável | Valor padrão | Descrição |
 |---|---|---|
 | `ConnectionStrings__PetPulseOracle` | _(nenhum — obrigatória)_ | Connection string do Oracle. Local: User Secrets ou `.env`; nuvem: variável secreta da pipeline |
 | `ASPNETCORE_ENVIRONMENT` | `Local` (localmente) / `Production` (nuvem) | Ambiente de execução — propositalmente nunca `Development`, veja observação abaixo |
 | `ASPNETCORE_URLS` | `http://+:8080` | URL de escuta da API |
-| `Jwt__Key` | _(nenhum — obrigatória)_ | Chave de assinatura dos tokens JWT (mín. 32 caracteres). Local: User Secrets ou `.env`; nuvem: variável secreta da pipeline (ou Key Vault, segredo `jwt-key`) |
+| `Jwt__Key` | _(nenhum — obrigatória)_ | Chave de assinatura dos tokens JWT (mín. 32 caracteres). Local: User Secrets ou `.env`; nuvem: variável secreta da pipeline |
 | `Jwt__Issuer` | `PetPulse` | Emissor (`iss`) do token JWT |
 | `Jwt__Audience` | `PetPulse.API` | Público-alvo (`aud`) do token JWT |
 | `ConnectionStrings__PetPulseMongo` | _(nenhum — obrigatória)_ | Connection string do MongoDB (histórico de leituras IoT). Local: User Secrets (ex.: `mongodb://localhost:27017`) ou definida pelo `docker-compose.yml`; nuvem: variável secreta da pipeline |
 | `MongoDatabase__Name` | `petpulse` | Nome do banco no MongoDB |
 
-> **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso o `launchSettings.json` (execução local com `dotnet run`) usa `ASPNETCORE_ENVIRONMENT=Local`, e a imagem Docker (`dockerfile`, usada pelo Docker Compose e pelo ACI) usa `Production` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
+> **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso o `launchSettings.json` (execução local com `dotnet run`) usa `ASPNETCORE_ENVIRONMENT=Local`, e a imagem Docker (`dockerfile`, usada pelo Docker Compose) e o Web App na nuvem usam `Production` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
 
 
 ---

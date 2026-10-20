@@ -20,6 +20,5 @@ logs/
 .env
 
 # Scripts e docs que não precisam entrar no contexto da imagem
-azure-cli.sh
 README.md
 docker-compose.yml

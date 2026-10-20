@@ -104,13 +104,6 @@ app.UseCorrelationId();
 
 app.UseSerilogRequestLogging();
 
-// Aplica migrations automaticamente ao iniciar - Inciar apenas caso for a primeira vez (não contendo o banco)
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<PetPulseContext>();
-//    db.Database.Migrate();
-//}
-
 app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 app.MapHealthChecks("/health", new HealthCheckOptions

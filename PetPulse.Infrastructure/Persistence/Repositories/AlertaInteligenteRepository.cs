@@ -12,14 +12,6 @@ namespace PetPulse.Infrastructure.Repositories;
 /// </summary>
 public sealed class AlertaInteligenteRepository(PetPulseContext context) : IAlertaInteligenteRepository
 {
-    public IReadOnlyList<AlertaInteligente> GetAll()
-    {
-        return context.AlertasInteligentes
-            .AsNoTracking()
-            .OrderByDescending(alerta => alerta.DataGeracao)
-            .ToList();
-    }
-
     public (IReadOnlyList<AlertaInteligente> Items, int Total) GetPaged(AlertaInteligenteQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);

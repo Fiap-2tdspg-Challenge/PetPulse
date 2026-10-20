@@ -8,8 +8,6 @@ namespace PetPulse.Application.Services;
 /// </summary>
 public interface IUsuarioRepository
 {
-    IReadOnlyList<Usuario> GetAll();
-
     /// <summary>
     /// Lista paginada, filtrada e ordenada conforme <see cref="UsuarioQuery"/>.
     /// </summary>

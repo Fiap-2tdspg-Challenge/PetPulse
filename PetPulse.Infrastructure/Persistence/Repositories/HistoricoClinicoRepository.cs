@@ -11,14 +11,6 @@ namespace PetPulse.Infrastructure.Repositories;
 /// </summary>
 public sealed class HistoricoClinicoRepository(PetPulseContext context) : IHistoricoClinicoRepository
 {
-    public IReadOnlyList<HistoricoClinico> GetAll()
-    {
-        return context.HistoricosClinicos
-            .AsNoTracking()
-            .OrderByDescending(historico => historico.DataRegistro)
-            .ToList();
-    }
-
     public (IReadOnlyList<HistoricoClinico> Items, int Total) GetPaged(HistoricoClinicoQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);

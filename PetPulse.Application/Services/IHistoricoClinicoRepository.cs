@@ -9,8 +9,6 @@ namespace PetPulse.Application.Services;
 /// </summary>
 public interface IHistoricoClinicoRepository
 {
-    IReadOnlyList<HistoricoClinico> GetAll();
-
     /// <summary>
     /// Lista paginada, filtrada e ordenada conforme <see cref="HistoricoClinicoQuery"/>.
     /// </summary>

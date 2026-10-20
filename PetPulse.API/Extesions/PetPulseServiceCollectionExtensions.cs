@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -47,7 +47,7 @@ public static class PetPulseServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// A chave de assinatura vem de "Jwt:Key" (appsettings.json, ou da variável de
-    /// ambiente <c>Jwt__Key</c> em produção — ver azure-cli.sh). Precisa ser a mesma
+    /// ambiente <c>Jwt__Key</c> em produção — ver azure-pipelines.yml). Precisa ser a mesma
     /// usada para emitir o token em <see cref="JwtTokenIssuer"/>.
     /// </remarks>
     public static IServiceCollection AddPetPulseAuth(

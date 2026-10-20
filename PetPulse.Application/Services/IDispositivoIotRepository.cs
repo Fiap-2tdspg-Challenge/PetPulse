@@ -8,8 +8,6 @@ namespace PetPulse.Application.Services;
 /// </summary>
 public interface IDispositivoIotRepository
 {
-    IReadOnlyList<DispositivoIot> GetAll();
-
     /// <summary>
     /// Lista paginada, filtrada e ordenada conforme <see cref="DispositivoIotQuery"/>.
     /// </summary>

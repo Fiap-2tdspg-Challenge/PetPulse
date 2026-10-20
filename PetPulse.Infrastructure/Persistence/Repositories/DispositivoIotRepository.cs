@@ -11,14 +11,6 @@ namespace PetPulse.Infrastructure.Repositories;
 /// </summary>
 public sealed class DispositivoIotRepository(PetPulseContext context) : IDispositivoIotRepository
 {
-    public IReadOnlyList<DispositivoIot> GetAll()
-    {
-        return context.DispositivosIot
-            .AsNoTracking()
-            .OrderByDescending(dispositivo => dispositivo.DataUltimaLeitura)
-            .ToList();
-    }
-
     public (IReadOnlyList<DispositivoIot> Items, int Total) GetPaged(DispositivoIotQuery query)
     {
         ArgumentNullException.ThrowIfNull(query);

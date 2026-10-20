@@ -1,6 +1,79 @@
-@PetPulse_HostAddress = http://localhost:5292
+### PetPulse API — requisições de teste (Rider / Visual Studio / VS Code REST Client)
+# 1. Rode a API (dotnet run --project PetPulse.API) ou troque o host pela URL da nuvem.
+# 2. Execute "Criar usuário" e depois "Login".
+# 3. Cole o accessToken retornado em @token e os ids retornados em @usuarioId / @petId.
 
-GET {{PetPulse_HostAddress}}/weatherforecast/
-Accept: application/json
+@host = http://localhost:5292
+# @host = https://petpulse-rm561378.azurewebsites.net
+@token = COLE_AQUI_O_ACCESS_TOKEN
+@usuarioId = 00000000-0000-0000-0000-000000000000
+@petId = 00000000-0000-0000-0000-000000000000
 
-###
+### Health check
+GET {{host}}/health
+
+### Criar usuário (público)
+POST {{host}}/api/Usuario
+Content-Type: application/json
+
+{
+  "nome": "Ana Souza",
+  "cpf": "12345678901",
+  "email": "ana.souza@email.com",
+  "senha": "Senha123456",
+  "telefone": "11999990001",
+  "endereco": "Rua das Flores, 100"
+}
+
+### Login (público) — copie o accessToken para @token
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana.souza@email.com",
+  "senha": "Senha123456"
+}
+
+### Listar usuários (paginado)
+GET {{host}}/api/Usuario?page=1&pageSize=10&sortBy=nome
+Authorization: Bearer {{token}}
+
+### Criar pet
+POST {{host}}/api/Pet
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": "{{usuarioId}}",
+  "nome": "Thor",
+  "especie": "Cachorro",
+  "raca": "Golden Retriever",
+  "dataNascimento": "2021-04-10",
+  "peso": 28.5,
+  "sexo": 1,
+  "castrado": true,
+  "porte": 3
+}
+
+### Listar pets com paginação, filtro e ordenação (resposta com links HATEOAS)
+GET {{host}}/api/Pet?page=1&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro
+Authorization: Bearer {{token}}
+
+### Buscar pet por id
+GET {{host}}/api/Pet/{{petId}}
+Authorization: Bearer {{token}}
+
+### Históricos clínicos de um pet em um período
+GET {{host}}/api/HistoricoClinico?petId={{petId}}&dataInicio=2026-01-01&dataFim=2026-12-31
+Authorization: Bearer {{token}}
+
+### Alertas abertos de risco alto
+GET {{host}}/api/AlertaInteligente?status=Aberto&nivelRisco=Alto
+Authorization: Bearer {{token}}
+
+### Parâmetro inválido (esperado: 400 Bad Request)
+GET {{host}}/api/Pet?pageSize=500
+Authorization: Bearer {{token}}
+
+### Sem token (esperado: 401 Unauthorized)
+GET {{host}}/api/Pet

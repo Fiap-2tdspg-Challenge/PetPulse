@@ -10,12 +10,6 @@ namespace PetPulse.Application.Services;
 public interface IAlertaInteligenteRepository
 {   
     /// <summary>
-    /// Retorna todos os Alertas
-    /// </summary>
-    /// <returns>Lista somente os alertas realizados</returns>
-    IReadOnlyList<AlertaInteligente> GetAll();
-
-    /// <summary>
     /// Lista paginada, filtrada e ordenada conforme <see cref="AlertaInteligenteQuery"/>.
     /// </summary>
     /// <returns>Itens da página solicitada e o total de itens que atendem aos filtros.</returns>

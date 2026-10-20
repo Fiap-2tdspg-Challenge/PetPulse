@@ -9,8 +9,6 @@ namespace PetPulse.Application.Services;
 /// </summary>
 public interface IPetRepository
 {
-    IReadOnlyList<Pet> GetAll();
-
     /// <summary>
     /// Lista paginada, filtrada e ordenada conforme <see cref="PetQuery"/>.
     /// </summary>
