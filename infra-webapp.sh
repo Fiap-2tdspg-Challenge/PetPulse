@@ -34,8 +34,10 @@ DbPass="${5:?ORACLE_PASS ausente}"
 app="${NOME_WEBAPP:?Variável NOME_WEBAPP não definida na pipeline}"
 location="${LOCATION:?Variável LOCATION não definida na pipeline}"
 runtime="${RUNTIME:-dotnet:10}"
-rg="rg-petpulse-webapp"
-plan="plan-petpulse"
+# Grupo novo, só para o Web App Windows: o Azure não deixa criar plano Windows num grupo/região
+# que já teve plano Linux ("You cannot change the OS hosting your app"), mesmo depois de excluído.
+rg="rg-petpulse-win"
+plan="plan-petpulse-win"
 sku="F1"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -95,8 +97,18 @@ az webapp list-runtimes --os windows -o tsv | grep -i dotnet || true
 echo "Criando (ou reaproveitando) o Grupo de Recursos $rg..."
 az group create --name "$rg" --location "$location" 1>/dev/null
 
-echo "Criando (ou reaproveitando) o Plano de Serviço $plan ($sku)..."
-az appservice plan create --name "$plan" --resource-group "$rg" --location "$location" --sku "$sku" 1>/dev/null
+# O plano precisa ser Windows (a API é publicada como Web App Windows).
+plan_linux="$(az appservice plan show --resource-group "$rg" --name "$plan" --query reserved -o tsv 2>/dev/null || true)"
+if [ "$plan_linux" = "true" ]; then
+  echo "ERRO: o Plano de Serviço $plan já existe, mas é Linux — a API usa Web App Windows."
+  echo "Exclua o plano (ou o grupo $rg) no Portal do Azure e rode a pipeline de novo."
+  exit 1
+fi
+
+echo "Criando (ou reaproveitando) o Plano de Serviço $plan ($sku, Windows)..."
+# A partir do Azure CLI 2.90 o padrão do "plan create" passou a ser Linux — por isso o
+# --is-linux false explícito.
+az appservice plan create --name "$plan" --resource-group "$rg" --location "$location" --sku "$sku" --is-linux false 1>/dev/null
 
 if az webapp show --resource-group "$rg" --name "$app" &>/dev/null; then
   echo "Serviço de Aplicativo $app já existe — reaproveitando."

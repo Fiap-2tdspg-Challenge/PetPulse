@@ -1,0 +1,134 @@
+# =============================================================
+# azure-pipelines.yml – CI/CD do PetPulse (Sprint 4)
+# Dispara a cada push na branch main:
+#   Stage CI
+#     1. Criar Infra Inicial: tabelas no Oracle (se não existirem) + Web App na Azure
+#     2. Build and Test: restore, build, testes automatizados e artefato "app"
+#   Stage CD (só roda depois que o CI gera um novo artefato com sucesso)
+#     3. Deploy do artefato "app" no Web App (Azure App Service)
+# =============================================================
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr: none
+
+variables:
+  buildConfiguration: 'Release'
+  ORACLE_HOST: 'oracle.fiap.com.br'
+  ORACLE_PORT: '1521'
+  ORACLE_SID: 'orcl'
+  ORACLE_USER: 'rm561378'
+  NOME_WEBAPP: 'petpulse-rm561378'
+  LOCATION: 'southafricanorth'
+  # Variáveis SECRETAS ficam só no botão "Variables" da pipeline (com cadeado), nunca aqui —
+  # uma variável declarada no YAML substitui a secreta:
+  #   ORACLE_PASS       senha do Oracle (usada pelo infra-webapp.sh no CI)
+  #   OracleConnection  connection string do Oracle (App Settings do Web App no CD)
+  #   MongoConnection   connection string do MongoDB Atlas (App Settings no CD)
+  #   JwtKey            chave de assinatura dos tokens JWT em produção (App Settings no CD)
+
+stages:
+- stage: CI
+  displayName: 'CI - Infra, Build e Testes'
+  jobs:
+
+  - job: CriarInfraInicial
+    displayName: 'Criar Infra Inicial'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Banco e Azure (infra-webapp.sh)'
+      inputs:
+        azureSubscription: 'PetPulseAzure'
+        scriptType: 'bash'
+        scriptLocation: 'scriptPath'
+        scriptPath: 'infra-webapp.sh'
+        arguments: '$(ORACLE_HOST) $(ORACLE_PORT) $(ORACLE_SID) $(ORACLE_USER) $(ORACLE_PASS)'
+
+  - job: BuildAndTest
+    displayName: 'Build and Test'
+    dependsOn: CriarInfraInicial
+    pool:
+      vmImage: 'windows-latest'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Instalar SDK .NET 10'
+      inputs:
+        packageType: 'sdk'
+        version: '10.x'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore'
+      inputs:
+        command: 'restore'
+        projects: 'PetPulse.sln'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: 'build'
+        projects: 'PetPulse.sln'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Testes automatizados'
+      inputs:
+        command: 'test'
+        projects: '**/*[Tt]ests/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage"'
+        publishTestResults: true
+        testRunTitle: 'Testes PetPulse'
+
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publicar cobertura de testes'
+      condition: succeededOrFailed()
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish da API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'PetPulse.API/PetPulse.API.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publicar artefato (app)'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'app'
+        publishLocation: 'Container'
+
+- stage: CD
+  displayName: 'CD - Deploy no Web App'
+  dependsOn: CI
+  condition: succeeded()
+  jobs:
+
+  - deployment: DeployWebApp
+    displayName: 'Deploy no Serviço de Aplicativo'
+    environment: 'producao'
+    pool:
+      vmImage: 'windows-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: 'app'
+            displayName: 'Baixar artefato (app)'
+
+          - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App ($(NOME_WEBAPP))'
+            inputs:
+              azureSubscription: 'PetPulseAzure'
+              appType: 'webApp'
+              appName: '$(NOME_WEBAPP)'
+              package: '$(Pipeline.Workspace)/app/**/*.zip'
+              appSettings: '-ASPNETCORE_ENVIRONMENT Production -ConnectionStrings__PetPulseOracle "$(OracleConnection)" -ConnectionStrings__PetPulseMongo "$(MongoConnection)" -Jwt__Key "$(JwtKey)"'
