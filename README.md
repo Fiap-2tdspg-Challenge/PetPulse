@@ -4,6 +4,11 @@
 
 ---
 
+# Membros
+- RM561378 - Pietro Paranhos Wilhelm - 1TDSPG
+- RM564093 - Gabriel Neris Losano- 1TDSPG
+- RM565594 - João Vitor Birilli- 1TDSPG
+
 ## Sumário
 
 - [Descrição do Projeto](#descrição-do-projeto)
@@ -84,6 +89,14 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 ---
 
 ## Arquitetura do projeto
+
+### Diagrama da solução
+
+![Arquitetura e fluxo CI/CD do PetPulse](docs/arquitetura-cicd.png)
+
+O diagrama mostra todos os componentes da solução — personas (desenvolvedor, tutor/clínica, coleira IoT), GitHub, Azure DevOps (pipelines CI/CD), Azure App Service, Oracle FIAP e MongoDB Atlas — e o fluxo numerado da esteira, detalhado em [Deploy em Nuvem (CI/CD com Azure DevOps)](#deploy-em-nuvem-cicd-com-azure-devops). O arquivo editável está em [`docs/arquitetura-cicd.drawio`](docs/arquitetura-cicd.drawio) (abrir no [draw.io](https://app.diagrams.net)).
+
+### Camadas
 
 A solução foi organizada em quatro projetos principais (mais os projetos de teste correspondentes):
 
@@ -754,28 +767,23 @@ A API é publicada no **Azure App Service (Web App)** por uma pipeline YAML do *
 - **API em produção:** `https://petpulse-rm561378.azurewebsites.net/swagger`
 - **Health check:** `https://petpulse-rm561378.azurewebsites.net/health`
 
-### Fluxo
+### Diagrama da arquitetura + fluxo CI/CD
 
-```text
-git push (main)
-   │
-   ▼
-Stage CI ─ Job "Criar Infra Inicial" (ubuntu, Azure CLI → infra-webapp.sh)
-   │         • Oracle FIAP: cria as tabelas do script_bd.sql só se ainda não existirem
-   │         • Azure: cria/reaproveita Resource Group, Plano (Windows, F1) e Web App
-   │
-   ├────── Job "Build and Test" (windows, .NET 10)
-   │         • restore → build (Release) → testes (xUnit) com cobertura
-   │         • publish da PetPulse.API → artefato "app" (.zip)
-   ▼
-Stage CD ─ Deployment "DeployWebApp" (environment "producao")
-             • baixa o artefato "app" e publica no Web App (AzureWebApp@1)
-             • grava as App Settings com as variáveis secretas da pipeline
-   │
-   ▼
-Azure Web App (petpulse-rm561378) ──► Oracle FIAP (dados relacionais)
-                                  └─► MongoDB Atlas (histórico de leituras IoT)
-```
+![Arquitetura e fluxo CI/CD do PetPulse](docs/arquitetura-cicd.png)
+
+| # | Etapa | Onde atua |
+|---|---|---|
+| 1 | O desenvolvedor faz commit/push na branch `main` | GitHub |
+| 2 | O push dispara automaticamente a pipeline (`trigger: main`) — Stage CI | Azure Pipelines |
+| 3 | Job **Criar Infra Inicial**: `infra-webapp.sh` cria as tabelas do `script_bd.sql` no Oracle (só se não existirem) e cria/reaproveita Resource Group, Plano e Web App | Azure CLI → Oracle FIAP / Azure |
+| 4 | Job **Build and Test**: restore, build (Release) e testes xUnit com cobertura publicada | Azure Pipelines (Tests) |
+| 5 | Publish da `PetPulse.API` e publicação do artefato `app` (.zip) | Azure DevOps (Artifacts) |
+| 6 | O novo artefato dispara o Stage CD (deployment no environment `producao`) | Azure Pipelines |
+| 7 | Deploy do .zip no Web App (`AzureWebApp@1`) e gravação das App Settings a partir das variáveis secretas | Azure App Service |
+| 8 | A API em produção usa o Oracle FIAP (EF Core) e grava o histórico de leituras IoT no MongoDB Atlas | Oracle FIAP / MongoDB Atlas |
+| 9 | Tutor/clínica (app), coleira ESP32 e Swagger/Postman consomem a API via HTTPS com JWT | Web App |
+
+> O **Oracle FIAP** é o banco de dados em nuvem principal da solução (dados relacionais). O MongoDB Atlas é complementar e guarda apenas o histórico de leituras da coleira IoT.
 
 O stage **CD** só roda quando o **CI** termina com sucesso; se um teste falhar, nada é publicado.
 
