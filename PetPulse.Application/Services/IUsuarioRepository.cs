@@ -1,4 +1,5 @@
-﻿using PetPulse.Domain.entites;
+using PetPulse.Application.DTOs;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Application.Services;
 
@@ -8,6 +9,12 @@ namespace PetPulse.Application.Services;
 public interface IUsuarioRepository
 {
     IReadOnlyList<Usuario> GetAll();
+
+    /// <summary>
+    /// Lista paginada, filtrada e ordenada conforme <see cref="UsuarioQuery"/>.
+    /// </summary>
+    /// <returns>Itens da página solicitada e o total de itens que atendem aos filtros.</returns>
+    (IReadOnlyList<Usuario> Items, int Total) GetPaged(UsuarioQuery query);
 
     Usuario? GetById(Guid id);
 

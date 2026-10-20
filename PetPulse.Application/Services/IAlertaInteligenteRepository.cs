@@ -1,4 +1,5 @@
-﻿using PetPulse.Domain.entites;
+using PetPulse.Application.DTOs;
+using PetPulse.Domain.entites;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Application.Services;
@@ -13,6 +14,12 @@ public interface IAlertaInteligenteRepository
     /// </summary>
     /// <returns>Lista somente os alertas realizados</returns>
     IReadOnlyList<AlertaInteligente> GetAll();
+
+    /// <summary>
+    /// Lista paginada, filtrada e ordenada conforme <see cref="AlertaInteligenteQuery"/>.
+    /// </summary>
+    /// <returns>Itens da página solicitada e o total de itens que atendem aos filtros.</returns>
+    (IReadOnlyList<AlertaInteligente> Items, int Total) GetPaged(AlertaInteligenteQuery query);
     
     /// <summary>
     /// Busca um alerta pelo id

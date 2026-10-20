@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
+using PetPulse.Hateoas;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Controllers;
 
@@ -33,20 +35,34 @@ public class UsuarioController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todos os usuários cadastrados.
+    /// Lista os usuários/tutores com paginação, ordenação e filtros.
     /// </summary>
-    /// <returns>Lista de usuários.</returns>
-    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <remarks>
+    /// Ordenação: sortBy = nome (padrão), email ou dataCadastro; sortDirection = asc ou desc.
+    /// Filtros: nome e email (contém o texto).
+    /// Exemplo: GET /api/Usuario?page=1&amp;pageSize=10&amp;sortBy=nome&amp;nome=ana
+    /// </remarks>
+    /// <param name="query">Paginação (page, pageSize), ordenação (sortBy, sortDirection) e filtros.</param>
+    /// <returns>Página de resultados com links HATEOAS de navegação.</returns>
+    /// <response code="200">Página retornada com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação, ordenação ou filtro inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<UsuarioResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetAll()
+    [ProducesResponseType(typeof(PagedResponse<UsuarioResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GetAll([FromQuery] UsuarioQuery query)
     {
-        var usuarios = _usuarioRepository
-            .GetAll()
-            .Select(UsuarioResponse.FromDomain)
-            .ToList();
+        if (query.TryGetError(out var erro))
+            return BadRequest(erro);
 
-        return Ok(usuarios);
+        var (usuarios, total) = _usuarioRepository.GetPaged(query);
+
+        var pagina = new PagedResponse<UsuarioResponse>(
+            usuarios.Select(ComLinks).ToList(),
+            query.Page,
+            query.PageSize,
+            total);
+
+        return Ok(pagina with { Links = HateoasLinks.Paginacao(Rotas.Usuario, query, pagina) });
     }
 
     /// <summary>
@@ -66,7 +82,7 @@ public class UsuarioController : ControllerBase
         if (usuario is null)
             return NotFound("Usuário não encontrado.");
 
-        return Ok(UsuarioResponse.FromDomain(usuario));
+        return Ok(ComLinks(usuario));
     }
 
     /// <summary>
@@ -95,7 +111,7 @@ public class UsuarioController : ControllerBase
 
         _usuarioRepository.Add(usuario);
 
-        var response = UsuarioResponse.FromDomain(usuario);
+        var response = ComLinks(usuario);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -137,7 +153,7 @@ public class UsuarioController : ControllerBase
 
         _usuarioRepository.Update(usuario);
 
-        return Ok(UsuarioResponse.FromDomain(usuario));
+        return Ok(ComLinks(usuario));
     }
 
     /// <summary>
@@ -160,4 +176,10 @@ public class UsuarioController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Converte a entidade para DTO e anexa os links HATEOAS do recurso.
+    /// </summary>
+    private static UsuarioResponse ComLinks(Usuario usuario) =>
+        UsuarioResponse.FromDomain(usuario) with { Links = HateoasLinks.Usuario(usuario.Id) };
 }

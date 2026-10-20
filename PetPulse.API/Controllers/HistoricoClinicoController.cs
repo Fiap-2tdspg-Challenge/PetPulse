@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
+using PetPulse.Hateoas;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Controllers;
 
@@ -32,20 +34,34 @@ public class HistoricoClinicoController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todos os registros de histórico clínico cadastrados.
+    /// Lista os registros de histórico clínico com paginação, ordenação e filtros.
     /// </summary>
-    /// <returns>Lista de registros clínicos.</returns>
-    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <remarks>
+    /// Ordenação: sortBy = dataRegistro (padrão, decrescente), tipoRegistro ou dataCadastro; sortDirection = asc ou desc.
+    /// Filtros: petId, tipoRegistro, dataInicio e dataFim (yyyy-MM-dd).
+    /// Exemplo: GET /api/HistoricoClinico?petId={id}&amp;tipoRegistro=Vacina&amp;dataInicio=2026-01-01
+    /// </remarks>
+    /// <param name="query">Paginação (page, pageSize), ordenação (sortBy, sortDirection) e filtros.</param>
+    /// <returns>Página de resultados com links HATEOAS de navegação.</returns>
+    /// <response code="200">Página retornada com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação, ordenação ou filtro inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<HistoricoClinicoResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetAll()
+    [ProducesResponseType(typeof(PagedResponse<HistoricoClinicoResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GetAll([FromQuery] HistoricoClinicoQuery query)
     {
-        var historicos = _historicoClinicoRepository
-            .GetAll()
-            .Select(HistoricoClinicoResponse.FromDomain)
-            .ToList();
+        if (query.TryGetError(out var erro))
+            return BadRequest(erro);
 
-        return Ok(historicos);
+        var (historicos, total) = _historicoClinicoRepository.GetPaged(query);
+
+        var pagina = new PagedResponse<HistoricoClinicoResponse>(
+            historicos.Select(ComLinks).ToList(),
+            query.Page,
+            query.PageSize,
+            total);
+
+        return Ok(pagina with { Links = HateoasLinks.Paginacao(Rotas.HistoricoClinico, query, pagina) });
     }
 
     /// <summary>
@@ -65,7 +81,7 @@ public class HistoricoClinicoController : ControllerBase
         if (historico is null)
             return NotFound("Histórico clínico não encontrado.");
 
-        return Ok(HistoricoClinicoResponse.FromDomain(historico));
+        return Ok(ComLinks(historico));
     }
 
     /// <summary>
@@ -85,7 +101,7 @@ public class HistoricoClinicoController : ControllerBase
 
         var historicos = _historicoClinicoRepository
             .GetByPetId(petId)
-            .Select(HistoricoClinicoResponse.FromDomain)
+            .Select(ComLinks)
             .ToList();
 
         return Ok(historicos);
@@ -116,7 +132,7 @@ public class HistoricoClinicoController : ControllerBase
 
         _historicoClinicoRepository.Add(historico);
 
-        var response = HistoricoClinicoResponse.FromDomain(historico);
+        var response = ComLinks(historico);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -163,7 +179,7 @@ public class HistoricoClinicoController : ControllerBase
 
         _historicoClinicoRepository.Update(historico);
 
-        return Ok(HistoricoClinicoResponse.FromDomain(historico));
+        return Ok(ComLinks(historico));
     }
 
     /// <summary>
@@ -184,4 +200,10 @@ public class HistoricoClinicoController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Converte a entidade para DTO e anexa os links HATEOAS do recurso.
+    /// </summary>
+    private static HistoricoClinicoResponse ComLinks(HistoricoClinico historico) =>
+        HistoricoClinicoResponse.FromDomain(historico) with { Links = HateoasLinks.HistoricoClinico(historico.Id, historico.PetId) };
 }

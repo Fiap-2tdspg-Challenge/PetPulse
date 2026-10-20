@@ -1,4 +1,4 @@
-﻿using PetPulse.Domain.entites;
+using PetPulse.Domain.entites;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Application.DTOs;
@@ -20,6 +20,11 @@ public record AlertaInteligenteResponse(
     DateTime CreatedAt
 )
 {
+    /// <summary>
+    /// Links HATEOAS do recurso (self, update, delete e relacionados), preenchidos pelo controller.
+    /// </summary>
+    public IReadOnlyList<LinkDto> Links { get; init; } = [];
+
     /// <summary>
     /// Mapeia a entidade AlertaInteligente para DTO.
     /// </summary>

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using PetPulse.Application.DTOs;
+using Microsoft.EntityFrameworkCore;
 using PetPulse.Application.Services;
 using PetPulse.Domain.entites;
 using PetPulse.Domain.Enum;
@@ -17,6 +18,49 @@ public sealed class AlertaInteligenteRepository(PetPulseContext context) : IAler
             .AsNoTracking()
             .OrderByDescending(alerta => alerta.DataGeracao)
             .ToList();
+    }
+
+    public (IReadOnlyList<AlertaInteligente> Items, int Total) GetPaged(AlertaInteligenteQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var alertas = context.AlertasInteligentes.AsNoTracking();
+
+        if (query.PetId.HasValue)
+        {
+            var petId = query.PetId.Value;
+            alertas = alertas.Where(alerta => alerta.PetId == petId);
+        }
+
+        if (query.Status.HasValue)
+        {
+            var status = query.Status.Value;
+            alertas = alertas.Where(alerta => alerta.Status == status);
+        }
+
+        if (query.NivelRisco.HasValue)
+        {
+            var nivelRisco = query.NivelRisco.Value;
+            alertas = alertas.Where(alerta => alerta.NivelRisco == nivelRisco);
+        }
+
+        if (query.TipoAlerta.HasValue)
+        {
+            var tipoAlerta = query.TipoAlerta.Value;
+            alertas = alertas.Where(alerta => alerta.TipoAlerta == tipoAlerta);
+        }
+
+        var descendente = query.EhDescendente();
+
+        var ordenados = query.ObterCampoOrdenacao() switch
+        {
+            "nivelrisco" => alertas.OrdenarPor(alerta => alerta.NivelRisco, descendente),
+            "status" => alertas.OrdenarPor(alerta => alerta.Status, descendente),
+            "tipoalerta" => alertas.OrdenarPor(alerta => alerta.TipoAlerta, descendente),
+            _ => alertas.OrdenarPor(alerta => alerta.DataGeracao, descendente)
+        };
+
+        return ordenados.Paginar(query.Page, query.PageSize);
     }
 
     public AlertaInteligente? GetById(Guid id)

@@ -1,4 +1,4 @@
-﻿using PetPulse.Domain.entites;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Application.DTOs;
 
@@ -15,6 +15,11 @@ public record UsuarioResponse(
     DateTime CreatedAt
 )
 {
+    /// <summary>
+    /// Links HATEOAS do recurso (self, update, delete e relacionados), preenchidos pelo controller.
+    /// </summary>
+    public IReadOnlyList<LinkDto> Links { get; init; } = [];
+
     /// <summary>
     /// Mapeia a entidade Usuario para DTO.
     /// </summary>

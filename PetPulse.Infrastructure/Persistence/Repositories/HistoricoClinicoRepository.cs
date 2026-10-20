@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using PetPulse.Application.DTOs;
+using Microsoft.EntityFrameworkCore;
 using PetPulse.Application.Services;
 using PetPulse.Domain.entites;
 using PetPulse.Infrastructure.Persistence;
@@ -16,6 +17,48 @@ public sealed class HistoricoClinicoRepository(PetPulseContext context) : IHisto
             .AsNoTracking()
             .OrderByDescending(historico => historico.DataRegistro)
             .ToList();
+    }
+
+    public (IReadOnlyList<HistoricoClinico> Items, int Total) GetPaged(HistoricoClinicoQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var historicos = context.HistoricosClinicos.AsNoTracking();
+
+        if (query.PetId.HasValue)
+        {
+            var petId = query.PetId.Value;
+            historicos = historicos.Where(historico => historico.PetId == petId);
+        }
+
+        if (query.TipoRegistro.HasValue)
+        {
+            var tipo = query.TipoRegistro.Value;
+            historicos = historicos.Where(historico => historico.TipoRegistro == tipo);
+        }
+
+        if (query.DataInicio.HasValue)
+        {
+            var dataInicio = query.DataInicio.Value;
+            historicos = historicos.Where(historico => historico.DataRegistro >= dataInicio);
+        }
+
+        if (query.DataFim.HasValue)
+        {
+            var dataFim = query.DataFim.Value;
+            historicos = historicos.Where(historico => historico.DataRegistro <= dataFim);
+        }
+
+        var descendente = query.EhDescendente();
+
+        var ordenados = query.ObterCampoOrdenacao() switch
+        {
+            "tiporegistro" => historicos.OrdenarPor(historico => historico.TipoRegistro, descendente),
+            "datacadastro" => historicos.OrdenarPor(historico => historico.CreatedAt, descendente),
+            _ => historicos.OrdenarPor(historico => historico.DataRegistro, descendente)
+        };
+
+        return ordenados.Paginar(query.Page, query.PageSize);
     }
 
     public HistoricoClinico? GetById(Guid id)

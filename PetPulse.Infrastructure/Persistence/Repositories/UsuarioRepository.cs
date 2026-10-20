@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using PetPulse.Application.DTOs;
+using Microsoft.EntityFrameworkCore;
 using PetPulse.Application.Services;
 using PetPulse.Domain.entites;
 using PetPulse.Infrastructure.Persistence;
@@ -13,6 +14,36 @@ public sealed class UsuarioRepository(PetPulseContext context) : IUsuarioReposit
             .AsNoTracking()
             .OrderBy(usuario => usuario.Nome)
             .ToList();
+    }
+
+    public (IReadOnlyList<Usuario> Items, int Total) GetPaged(UsuarioQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var usuarios = context.Usuarios.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(query.Nome))
+        {
+            var nome = query.Nome.Trim().ToLower();
+            usuarios = usuarios.Where(usuario => usuario.Nome.ToLower().Contains(nome));
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Email))
+        {
+            var email = query.Email.Trim().ToLower();
+            usuarios = usuarios.Where(usuario => usuario.Email.ToLower().Contains(email));
+        }
+
+        var descendente = query.EhDescendente();
+
+        var ordenados = query.ObterCampoOrdenacao() switch
+        {
+            "email" => usuarios.OrdenarPor(usuario => usuario.Email, descendente),
+            "datacadastro" => usuarios.OrdenarPor(usuario => usuario.CreatedAt, descendente),
+            _ => usuarios.OrdenarPor(usuario => usuario.Nome, descendente)
+        };
+
+        return ordenados.Paginar(query.Page, query.PageSize);
     }
 
     public Usuario? GetById(Guid id)

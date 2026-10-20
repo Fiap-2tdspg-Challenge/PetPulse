@@ -1,4 +1,5 @@
-﻿using PetPulse.Domain.entites;
+using PetPulse.Application.DTOs;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Application.Services;
 
@@ -9,6 +10,12 @@ namespace PetPulse.Application.Services;
 public interface IHistoricoClinicoRepository
 {
     IReadOnlyList<HistoricoClinico> GetAll();
+
+    /// <summary>
+    /// Lista paginada, filtrada e ordenada conforme <see cref="HistoricoClinicoQuery"/>.
+    /// </summary>
+    /// <returns>Itens da página solicitada e o total de itens que atendem aos filtros.</returns>
+    (IReadOnlyList<HistoricoClinico> Items, int Total) GetPaged(HistoricoClinicoQuery query);
 
     HistoricoClinico? GetById(Guid id);
 

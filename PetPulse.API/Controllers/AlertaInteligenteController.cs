@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
+using PetPulse.Hateoas;
+using PetPulse.Domain.entites;
 using PetPulse.Domain.Enum;
 
 namespace PetPulse.Controllers;
@@ -40,20 +42,34 @@ public class AlertaInteligenteController : ControllerBase
 
     
     /// <summary>
-    /// Lista todos os alertas inteligentes cadastrados.
+    /// Lista os alertas inteligentes com paginação, ordenação e filtros.
     /// </summary>
-    /// <returns>Lista de alertas inteligentes.</returns>
-    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <remarks>
+    /// Ordenação: sortBy = dataGeracao (padrão, decrescente), nivelRisco, status ou tipoAlerta; sortDirection = asc ou desc.
+    /// Filtros: petId, status, nivelRisco e tipoAlerta.
+    /// Exemplo: GET /api/AlertaInteligente?status=Aberto&amp;nivelRisco=Alto
+    /// </remarks>
+    /// <param name="query">Paginação (page, pageSize), ordenação (sortBy, sortDirection) e filtros.</param>
+    /// <returns>Página de resultados com links HATEOAS de navegação.</returns>
+    /// <response code="200">Página retornada com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação, ordenação ou filtro inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<AlertaInteligenteResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetAll()
+    [ProducesResponseType(typeof(PagedResponse<AlertaInteligenteResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GetAll([FromQuery] AlertaInteligenteQuery query)
     {
-        var alertas = _alertaInteligenteRepository
-            .GetAll()
-            .Select(AlertaInteligenteResponse.FromDomain)
-            .ToList();
+        if (query.TryGetError(out var erro))
+            return BadRequest(erro);
 
-        return Ok(alertas);
+        var (alertas, total) = _alertaInteligenteRepository.GetPaged(query);
+
+        var pagina = new PagedResponse<AlertaInteligenteResponse>(
+            alertas.Select(ComLinks).ToList(),
+            query.Page,
+            query.PageSize,
+            total);
+
+        return Ok(pagina with { Links = HateoasLinks.Paginacao(Rotas.AlertaInteligente, query, pagina) });
     }
 
     /// <summary>
@@ -73,7 +89,7 @@ public class AlertaInteligenteController : ControllerBase
         if (alerta is null)
             return NotFound("Alerta inteligente não encontrado.");
 
-        return Ok(AlertaInteligenteResponse.FromDomain(alerta));
+        return Ok(ComLinks(alerta));
     }
 
     /// <summary>
@@ -93,7 +109,7 @@ public class AlertaInteligenteController : ControllerBase
 
         var alertas = _alertaInteligenteRepository
             .GetByPetId(petId)
-            .Select(AlertaInteligenteResponse.FromDomain)
+            .Select(ComLinks)
             .ToList();
 
         return Ok(alertas);
@@ -111,7 +127,7 @@ public class AlertaInteligenteController : ControllerBase
     {
         var alertas = _alertaInteligenteRepository
             .GetByStatus(status)
-            .Select(AlertaInteligenteResponse.FromDomain)
+            .Select(ComLinks)
             .ToList();
 
         return Ok(alertas);
@@ -141,7 +157,7 @@ public class AlertaInteligenteController : ControllerBase
 
         _alertaInteligenteRepository.Add(alerta);
 
-        var response = AlertaInteligenteResponse.FromDomain(alerta);
+        var response = ComLinks(alerta);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -186,7 +202,7 @@ public class AlertaInteligenteController : ControllerBase
 
         _alertaInteligenteRepository.Update(alerta);
 
-        return Ok(AlertaInteligenteResponse.FromDomain(alerta));
+        return Ok(ComLinks(alerta));
     }
 
     /// <summary>
@@ -210,7 +226,7 @@ public class AlertaInteligenteController : ControllerBase
 
         _alertaInteligenteRepository.Update(alerta);
 
-        return Ok(AlertaInteligenteResponse.FromDomain(alerta));
+        return Ok(ComLinks(alerta));
     }
 
     /// <summary>
@@ -234,7 +250,7 @@ public class AlertaInteligenteController : ControllerBase
 
         _alertaInteligenteRepository.Update(alerta);
 
-        return Ok(AlertaInteligenteResponse.FromDomain(alerta));
+        return Ok(ComLinks(alerta));
     }
 
     /// <summary>
@@ -255,4 +271,10 @@ public class AlertaInteligenteController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Converte a entidade para DTO e anexa os links HATEOAS do recurso.
+    /// </summary>
+    private static AlertaInteligenteResponse ComLinks(AlertaInteligente alerta) =>
+        AlertaInteligenteResponse.FromDomain(alerta) with { Links = HateoasLinks.AlertaInteligente(alerta.Id, alerta.PetId, alerta.Status) };
 }

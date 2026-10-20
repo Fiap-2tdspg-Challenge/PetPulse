@@ -17,6 +17,7 @@
 - [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
 - [Autenticação (JWT)](#autenticação-jwt)
 - [MongoDB — histórico de leituras IoT](#mongodb--histórico-de-leituras-iot)
+- [Paginação, ordenação, filtros e HATEOAS](#paginação-ordenação-filtros-e-hateoas)
 - [Testes automatizados](#testes-automatizados)
 - [Arquitetura de Deploy (ACR + ACI + Key Vault)](#arquitetura-de-deploy-acr--aci--key-vault)
 - [Como executar](#como-executar)
@@ -510,6 +511,97 @@ db.leituras_iot.find({ dispositivoId: UUID("<id-do-dispositivo>") }).sort({ data
 
 ---
 
+## Paginação, ordenação, filtros e HATEOAS
+
+As cinco listagens principais (`GET /api/Usuario`, `/api/Pet`, `/api/HistoricoClinico`, `/api/DispositivoIot` e `/api/AlertaInteligente`) são **paginadas**, aceitam **ordenação** e **filtros** pela query string e retornam **links HATEOAS**. A paginação por offset segue o modelo do repositório de referência da disciplina (`PaginationQuery` / `PagedResponse`).
+
+### Parâmetros comuns
+
+| Parâmetro | Padrão | Regra |
+|---|---|---|
+| `page` | `1` | Número da página, a partir de 1 |
+| `pageSize` | `20` | De 1 a 100 itens por página |
+| `sortBy` | depende do recurso | Campo de ordenação (lista abaixo, sem diferenciar maiúsculas) |
+| `sortDirection` | `asc` | `asc` ou `desc` |
+
+Valores inválidos (ex.: `page=0`, `pageSize=500`, `sortBy=cpf`, `sortDirection=cima`, `dataInicio` depois de `dataFim`) retornam **400 Bad Request** com a mensagem do problema. Filtros de texto buscam por "contém" e ignoram maiúsculas; enums aceitam o nome (`Aberto`) ou o número (`1`). Em empates na ordenação, o desempate é feito pelo `Id`, para que nenhum item se repita ou suma entre as páginas.
+
+### Ordenação e filtros por recurso
+
+| Recurso | `sortBy` aceitos | Ordenação padrão | Filtros |
+|---|---|---|---|
+| `GET /api/Usuario` | `nome`, `email`, `dataCadastro` | `nome` crescente | `nome`, `email` |
+| `GET /api/Pet` | `nome`, `especie`, `peso`, `dataNascimento`, `dataCadastro` | `nome` crescente | `usuarioId`, `nome`, `especie` (exata), `porte`, `sexo`, `castrado` |
+| `GET /api/HistoricoClinico` | `dataRegistro`, `tipoRegistro`, `dataCadastro` | `dataRegistro` decrescente | `petId`, `tipoRegistro`, `dataInicio`, `dataFim` (formato `yyyy-MM-dd`) |
+| `GET /api/DispositivoIot` | `dataUltimaLeitura`, `dataVinculacao`, `frequenciaCardiaca`, `dataCadastro` | `dataUltimaLeitura` decrescente | `petId`, `status` |
+| `GET /api/AlertaInteligente` | `dataGeracao`, `nivelRisco`, `status`, `tipoAlerta` | `dataGeracao` decrescente | `petId`, `status`, `nivelRisco`, `tipoAlerta` |
+
+### Exemplos
+
+```http
+GET /api/Pet?page=1&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro
+GET /api/AlertaInteligente?status=Aberto&nivelRisco=Alto
+GET /api/HistoricoClinico?petId={petId}&dataInicio=2026-01-01&dataFim=2026-06-30
+GET /api/Usuario?nome=ana&sortBy=dataCadastro&sortDirection=desc
+```
+
+### Formato da resposta paginada
+
+```json
+{
+  "items": [
+    {
+      "id": "8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a",
+      "usuarioId": "3a7d9e10-55c2-4f0b-8e61-2b9c4d7a1e3f",
+      "nome": "Thor",
+      "especie": "Cachorro",
+      "peso": 30.0,
+      "links": [
+        { "rel": "self", "href": "/api/Pet/8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a", "method": "GET" },
+        { "rel": "update", "href": "/api/Pet/8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a", "method": "PUT" },
+        { "rel": "delete", "href": "/api/Pet/8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a", "method": "DELETE" },
+        { "rel": "usuario", "href": "/api/Usuario/3a7d9e10-55c2-4f0b-8e61-2b9c4d7a1e3f", "method": "GET" },
+        { "rel": "historicos-clinicos", "href": "/api/HistoricoClinico/pet/8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a", "method": "GET" },
+        { "rel": "alertas", "href": "/api/AlertaInteligente/pet/8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a", "method": "GET" },
+        { "rel": "dispositivo-iot", "href": "/api/DispositivoIot/pet/8f1c2a4e-0d6b-4b8e-9b0a-1f2e3d4c5b6a", "method": "GET" }
+      ]
+    }
+  ],
+  "page": 1,
+  "pageSize": 2,
+  "totalItems": 3,
+  "totalPages": 2,
+  "hasPrevious": false,
+  "hasNext": true,
+  "links": [
+    { "rel": "self", "href": "/api/Pet?page=1&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro", "method": "GET" },
+    { "rel": "first", "href": "/api/Pet?page=1&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro", "method": "GET" },
+    { "rel": "next", "href": "/api/Pet?page=2&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro", "method": "GET" },
+    { "rel": "last", "href": "/api/Pet?page=2&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro", "method": "GET" },
+    { "rel": "create", "href": "/api/Pet", "method": "POST" }
+  ]
+}
+```
+
+> O item acima está resumido (os demais campos do pet foram omitidos).
+
+### Links HATEOAS
+
+- **Na página:** `self`, `first`, `prev` (só se houver página anterior), `next` (só se houver próxima), `last` e `create`. Os links de navegação mantêm os mesmos filtros e a mesma ordenação da requisição.
+- **Em cada recurso** (nas listagens e também em `GET /{id}`, `POST` e `PUT`): `self`, `update`, `delete` e os recursos relacionados:
+
+| Recurso | Links relacionados |
+|---|---|
+| Usuário | `pets` |
+| Pet | `usuario`, `historicos-clinicos`, `alertas`, `dispositivo-iot` |
+| Histórico clínico | `pet` |
+| Dispositivo IoT | `pet`, `leituras` (GET) e `registrar-leitura` (POST) do histórico no MongoDB |
+| Alerta inteligente | `pet`, e os links de ação conforme o estado: `visualizar` só enquanto está **Aberto** e `resolver` enquanto ainda não foi **Resolvido** |
+
+Os links são caminhos relativos à API (ex.: `/api/Pet/{id}`) e ficam em `PetPulse.API/Hateoas/HateoasLinks.cs`.
+
+---
+
 ## Testes automatizados
 
 A solução conta com testes automatizados em **xUnit**, organizados por camada e espelhando a própria Clean Architecture do projeto. Cada projeto de produção tem seu par de testes:
@@ -861,6 +953,8 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 ## Endpoints disponíveis
 
 > Coluna **Protegido?**: `Sim` exige o header `Authorization: Bearer {accessToken}` (ver [Autenticação (JWT)](#autenticação-jwt)). Os únicos endpoints públicos são o cadastro de usuário e o login.
+>
+> As listagens `GET` de cada recurso aceitam `page`, `pageSize`, `sortBy`, `sortDirection` e filtros — ver [Paginação, ordenação, filtros e HATEOAS](#paginação-ordenação-filtros-e-hateoas).
 
 
 ### Autenticação
@@ -873,7 +967,7 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 
 | Método | Endpoint            | Descrição               | Protegido? |
 | ------ | ------------------- | ----------------------- |------------|
-| GET    | `/api/Usuario`      | Lista todos os usuários | Não        |
+| GET    | `/api/Usuario`      | Lista usuários (paginado, filtros e ordenação) | Não        |
 | GET    | `/api/Usuario/{id}` | Busca usuário por ID    | Não        |
 | POST   | `/api/Usuario`      | Cria um usuário         | Não        |
 | PUT    | `/api/Usuario/{id}` | Atualiza um usuário     | Sim        |
@@ -883,7 +977,7 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 
 | Método | Endpoint                       | Descrição                | Protegido? |
 | ------ | ------------------------------ | ------------------------ | ---------- |
-| GET    | `/api/Pet`                     | Lista todos os pets      | Sim        |
+| GET    | `/api/Pet`                     | Lista pets (paginado, filtros e ordenação) | Sim        |
 | GET    | `/api/Pet/{id}`                | Busca pet por ID         | Sim        |
 | GET    | `/api/Pet/usuario/{usuarioId}` | Lista pets de um usuário | Sim        |
 | POST   | `/api/Pet`                     | Cria um pet              | Sim        |
@@ -894,7 +988,7 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 
 | Método | Endpoint                            | Descrição                  | Protegido? |
 | ------ | ----------------------------------- | -------------------------- | ---------- |
-| GET    | `/api/HistoricoClinico`             | Lista todos os históricos  | Sim        |
+| GET    | `/api/HistoricoClinico`             | Lista históricos (paginado, filtros e ordenação) | Sim        |
 | GET    | `/api/HistoricoClinico/{id}`        | Busca histórico por ID     | Sim        |
 | GET    | `/api/HistoricoClinico/pet/{petId}` | Lista históricos de um pet | Sim        |
 | POST   | `/api/HistoricoClinico`             | Cria histórico clínico     | Sim        |
@@ -905,7 +999,7 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 
 | Método | Endpoint                          | Descrição                    | Protegido? |
 | ------ | --------------------------------- | ----------------------------- | ---------- |
-| GET    | `/api/DispositivoIot`             | Lista todos os dispositivos  | Sim        |
+| GET    | `/api/DispositivoIot`             | Lista dispositivos (paginado, filtros e ordenação) | Sim        |
 | GET    | `/api/DispositivoIot/{id}`        | Busca dispositivo por ID     | Sim        |
 | GET    | `/api/DispositivoIot/pet/{petId}` | Busca dispositivo de um pet  | Sim        |
 | POST   | `/api/DispositivoIot`             | Cria dispositivo IoT         | Sim        |
@@ -925,7 +1019,7 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 
 | Método | Endpoint                                 | Descrição                      | Protegido? |
 | ------ | ----------------------------------------- | ------------------------------- | ---------- |
-| GET    | `/api/AlertaInteligente`                 | Lista todos os alertas         | Sim        |
+| GET    | `/api/AlertaInteligente`                 | Lista alertas (paginado, filtros e ordenação) | Sim        |
 | GET    | `/api/AlertaInteligente/{id}`            | Busca alerta por ID            | Sim        |
 | GET    | `/api/AlertaInteligente/pet/{petId}`     | Lista alertas de um pet        | Sim        |
 | GET    | `/api/AlertaInteligente/status/{status}` | Lista alertas por status       | Sim        |
@@ -1268,6 +1362,32 @@ Resultado esperado:
 
 ```text
 200 OK
+```
+
+A resposta vem paginada (`items`, `page`, `pageSize`, `totalItems`, `totalPages`, `hasPrevious`, `hasNext` e `links`).
+
+## Listar pets com paginação, filtro e ordenação
+
+```http
+GET /api/Pet?page=1&pageSize=2&sortBy=peso&sortDirection=desc&especie=Cachorro
+```
+
+Resultado esperado:
+
+```text
+200 OK — até 2 cachorros, do mais pesado para o mais leve, com os links next/last apontando para a página seguinte
+```
+
+## Listar com parâmetro inválido
+
+```http
+GET /api/Pet?pageSize=500
+```
+
+Resultado esperado:
+
+```text
+400 Bad Request — "pageSize deve estar entre 1 e 100."
 ```
 
 ---

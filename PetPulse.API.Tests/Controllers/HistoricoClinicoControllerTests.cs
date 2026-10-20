@@ -20,19 +20,37 @@ public class HistoricoClinicoControllerTests
     }
 
     [Fact]
-    public void GetAll_DeveRetornarOkComListaDeHistoricos()
+    public void GetAll_DeveRetornarPaginaComHistoricosELinksHateoas()
     {
         // Arrange
-        var historicos = new List<HistoricoClinico> { CriarHistoricoValido() };
-        _historicoClinicoRepository.Setup(r => r.GetAll()).Returns(historicos);
+        IReadOnlyList<HistoricoClinico> historicos = new List<HistoricoClinico> { CriarHistoricoValido() };
+        _historicoClinicoRepository.Setup(r => r.GetPaged(It.IsAny<HistoricoClinicoQuery>())).Returns((historicos, 1));
 
         // Act
-        var result = _controller.GetAll();
+        var result = _controller.GetAll(new HistoricoClinicoQuery());
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsAssignableFrom<IReadOnlyList<HistoricoClinicoResponse>>(okResult.Value);
-        Assert.Single(response);
+        var pagina = Assert.IsType<PagedResponse<HistoricoClinicoResponse>>(okResult.Value);
+        Assert.Single(pagina.Items);
+        Assert.Contains(pagina.Items[0].Links, link => link.Rel == "pet");
+    }
+
+    [Fact]
+    public void GetAll_ComDataInicioPosteriorADataFim_DeveRetornarBadRequest()
+    {
+        // Arrange
+        var query = new HistoricoClinicoQuery
+        {
+            DataInicio = new DateOnly(2026, 12, 31),
+            DataFim = new DateOnly(2026, 1, 1)
+        };
+
+        // Act
+        var result = _controller.GetAll(query);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 
     [Fact]

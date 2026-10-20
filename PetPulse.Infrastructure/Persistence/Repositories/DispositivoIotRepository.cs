@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using PetPulse.Application.DTOs;
+using Microsoft.EntityFrameworkCore;
 using PetPulse.Application.Services;
 using PetPulse.Domain.entites;
 using PetPulse.Infrastructure.Persistence;
@@ -16,6 +17,37 @@ public sealed class DispositivoIotRepository(PetPulseContext context) : IDisposi
             .AsNoTracking()
             .OrderByDescending(dispositivo => dispositivo.DataUltimaLeitura)
             .ToList();
+    }
+
+    public (IReadOnlyList<DispositivoIot> Items, int Total) GetPaged(DispositivoIotQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var dispositivos = context.DispositivosIot.AsNoTracking();
+
+        if (query.PetId.HasValue)
+        {
+            var petId = query.PetId.Value;
+            dispositivos = dispositivos.Where(dispositivo => dispositivo.PetId == petId);
+        }
+
+        if (query.Status.HasValue)
+        {
+            var status = query.Status.Value;
+            dispositivos = dispositivos.Where(dispositivo => dispositivo.Status == status);
+        }
+
+        var descendente = query.EhDescendente();
+
+        var ordenados = query.ObterCampoOrdenacao() switch
+        {
+            "datavinculacao" => dispositivos.OrdenarPor(dispositivo => dispositivo.DataVinculacao, descendente),
+            "frequenciacardiaca" => dispositivos.OrdenarPor(dispositivo => dispositivo.FrequenciaCardiaca, descendente),
+            "datacadastro" => dispositivos.OrdenarPor(dispositivo => dispositivo.CreatedAt, descendente),
+            _ => dispositivos.OrdenarPor(dispositivo => dispositivo.DataUltimaLeitura, descendente)
+        };
+
+        return ordenados.Paginar(query.Page, query.PageSize);
     }
 
     public DispositivoIot? GetById(Guid id)

@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
+using PetPulse.Hateoas;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Controllers;
 
@@ -33,20 +35,34 @@ public class DispositivoIotController : ControllerBase
 
     
     /// <summary>
-    /// Inicializa o controller com os repositórios necessários.
+    /// Lista os dispositivos IoT com paginação, ordenação e filtros.
     /// </summary>
-    /// <param name="dispositivoIotRepository">Repositório de dispositivos IoT.</param>
-    /// <param name="petRepository">Repositório de pets.</param>
+    /// <remarks>
+    /// Ordenação: sortBy = dataUltimaLeitura (padrão, decrescente), dataVinculacao, frequenciaCardiaca ou dataCadastro; sortDirection = asc ou desc.
+    /// Filtros: petId e status.
+    /// Exemplo: GET /api/DispositivoIot?status=Ativo&amp;sortBy=frequenciaCardiaca&amp;sortDirection=desc
+    /// </remarks>
+    /// <param name="query">Paginação (page, pageSize), ordenação (sortBy, sortDirection) e filtros.</param>
+    /// <returns>Página de resultados com links HATEOAS de navegação.</returns>
+    /// <response code="200">Página retornada com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação, ordenação ou filtro inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<DispositivoIotResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetAll()
+    [ProducesResponseType(typeof(PagedResponse<DispositivoIotResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GetAll([FromQuery] DispositivoIotQuery query)
     {
-        var dispositivos = _dispositivoIotRepository
-            .GetAll()
-            .Select(DispositivoIotResponse.FromDomain)
-            .ToList();
+        if (query.TryGetError(out var erro))
+            return BadRequest(erro);
 
-        return Ok(dispositivos);
+        var (dispositivos, total) = _dispositivoIotRepository.GetPaged(query);
+
+        var pagina = new PagedResponse<DispositivoIotResponse>(
+            dispositivos.Select(ComLinks).ToList(),
+            query.Page,
+            query.PageSize,
+            total);
+
+        return Ok(pagina with { Links = HateoasLinks.Paginacao(Rotas.DispositivoIot, query, pagina) });
     }
 
  
@@ -67,7 +83,7 @@ public class DispositivoIotController : ControllerBase
         if (dispositivo is null)
             return NotFound("Dispositivo IoT não encontrado.");
 
-        return Ok(DispositivoIotResponse.FromDomain(dispositivo));
+        return Ok(ComLinks(dispositivo));
     }
 
     /// <summary>
@@ -90,7 +106,7 @@ public class DispositivoIotController : ControllerBase
         if (dispositivo is null)
             return NotFound("Nenhum dispositivo IoT vinculado a este pet.");
 
-        return Ok(DispositivoIotResponse.FromDomain(dispositivo));
+        return Ok(ComLinks(dispositivo));
     }
 
    
@@ -121,7 +137,7 @@ public class DispositivoIotController : ControllerBase
 
         _dispositivoIotRepository.Add(dispositivo);
 
-        var response = DispositivoIotResponse.FromDomain(dispositivo);
+        var response = ComLinks(dispositivo);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -168,7 +184,7 @@ public class DispositivoIotController : ControllerBase
 
         _dispositivoIotRepository.Update(dispositivo);
 
-        return Ok(DispositivoIotResponse.FromDomain(dispositivo));
+        return Ok(ComLinks(dispositivo));
     }
 
     /// <summary>
@@ -189,4 +205,10 @@ public class DispositivoIotController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Converte a entidade para DTO e anexa os links HATEOAS do recurso.
+    /// </summary>
+    private static DispositivoIotResponse ComLinks(DispositivoIot dispositivo) =>
+        DispositivoIotResponse.FromDomain(dispositivo) with { Links = HateoasLinks.DispositivoIot(dispositivo.Id, dispositivo.PetId) };
 }

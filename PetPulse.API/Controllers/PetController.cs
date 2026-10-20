@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetPulse.Application.DTOs;
 using PetPulse.Application.Services;
+using PetPulse.Hateoas;
+using PetPulse.Domain.entites;
 
 namespace PetPulse.Controllers;
 
@@ -33,20 +35,34 @@ public class PetController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todos os pets cadastrados.
+    /// Lista os pets com paginação, ordenação e filtros.
     /// </summary>
-    /// <returns>Lista de pets cadastrados.</returns>
-    /// <response code="200">Lista retornada com sucesso.</response>
+    /// <remarks>
+    /// Ordenação: sortBy = nome (padrão), especie, peso, dataNascimento ou dataCadastro; sortDirection = asc ou desc.
+    /// Filtros: usuarioId, nome, especie, porte, sexo e castrado.
+    /// Exemplo: GET /api/Pet?page=1&amp;pageSize=10&amp;sortBy=peso&amp;sortDirection=desc&amp;especie=Cachorro
+    /// </remarks>
+    /// <param name="query">Paginação (page, pageSize), ordenação (sortBy, sortDirection) e filtros.</param>
+    /// <returns>Página de resultados com links HATEOAS de navegação.</returns>
+    /// <response code="200">Página retornada com sucesso.</response>
+    /// <response code="400">Parâmetros de paginação, ordenação ou filtro inválidos.</response>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<PetResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetAll()
+    [ProducesResponseType(typeof(PagedResponse<PetResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public IActionResult GetAll([FromQuery] PetQuery query)
     {
-        var pets = _petRepository
-            .GetAll()
-            .Select(PetResponse.FromDomain)
-            .ToList();
+        if (query.TryGetError(out var erro))
+            return BadRequest(erro);
 
-        return Ok(pets);
+        var (pets, total) = _petRepository.GetPaged(query);
+
+        var pagina = new PagedResponse<PetResponse>(
+            pets.Select(ComLinks).ToList(),
+            query.Page,
+            query.PageSize,
+            total);
+
+        return Ok(pagina with { Links = HateoasLinks.Paginacao(Rotas.Pet, query, pagina) });
     }
 
     /// <summary>
@@ -66,7 +82,7 @@ public class PetController : ControllerBase
         if (pet is null)
             return NotFound("Pet não encontrado.");
 
-        return Ok(PetResponse.FromDomain(pet));
+        return Ok(ComLinks(pet));
     }
 
     /// <summary>
@@ -86,7 +102,7 @@ public class PetController : ControllerBase
 
         var pets = _petRepository
             .GetByUsuarioId(usuarioId)
-            .Select(PetResponse.FromDomain)
+            .Select(ComLinks)
             .ToList();
 
         return Ok(pets);
@@ -116,7 +132,7 @@ public class PetController : ControllerBase
 
         _petRepository.Add(pet);
 
-        var response = PetResponse.FromDomain(pet);
+        var response = ComLinks(pet);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -164,7 +180,7 @@ public class PetController : ControllerBase
 
         _petRepository.Update(pet);
 
-        return Ok(PetResponse.FromDomain(pet));
+        return Ok(ComLinks(pet));
     }
 
     /// <summary>
@@ -185,4 +201,10 @@ public class PetController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Converte a entidade para DTO e anexa os links HATEOAS do recurso.
+    /// </summary>
+    private static PetResponse ComLinks(Pet pet) =>
+        PetResponse.FromDomain(pet) with { Links = HateoasLinks.Pet(pet.Id, pet.UsuarioId) };
 }
