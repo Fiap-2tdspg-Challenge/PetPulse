@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.OpenApi;
 
 namespace PetPulse.Extesions;
@@ -61,7 +61,8 @@ public static class SwaggerServiceCollectionExtensions
                     "Pet" => "02",
                     "HistoricoClinico" => "03",
                     "DispositivoIot" => "04",
-                    "AlertaInteligente" => "05",
+                    "LeituraIot" => "05",
+                    "AlertaInteligente" => "06",
                     _ => "99"
                 };
 

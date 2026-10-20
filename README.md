@@ -16,6 +16,7 @@
 - [Migrations](#migrations)
 - [Observabilidade e Monitoramento](#observabilidade-e-monitoramento)
 - [Autenticação (JWT)](#autenticação-jwt)
+- [MongoDB — histórico de leituras IoT](#mongodb--histórico-de-leituras-iot)
 - [Testes automatizados](#testes-automatizados)
 - [Arquitetura de Deploy (ACR + ACI + Key Vault)](#arquitetura-de-deploy-acr--aci--key-vault)
 - [Como executar](#como-executar)
@@ -66,6 +67,7 @@ A arquitetura segue princípios de **Clean Architecture**, garantindo alta manut
 * ASP.NET Core Web API
 * Entity Framework Core
 * Oracle Database
+* MongoDB (MongoDB.Driver) — histórico de leituras da coleira IoT
 * EF Core Migrations
 * Swagger / OpenAPI
 * Serilog (logging estruturado)
@@ -298,7 +300,7 @@ A API implementa monitoramento e observabilidade seguindo os requisitos da Sprin
 GET /health
 ```
 
-Verifica a saúde da API, a conectividade com o banco Oracle e a disponibilidade de um serviço externo. Utiliza `Microsoft.Extensions.Diagnostics.HealthChecks`.
+Verifica a saúde da API, a conectividade com o banco Oracle e com o MongoDB e a disponibilidade de um serviço externo. Utiliza `Microsoft.Extensions.Diagnostics.HealthChecks`.
 
 Checks configurados:
 
@@ -307,6 +309,7 @@ Checks configurados:
 | `PetPulse API` | Self-check simples, confirma que a API está no ar |
 | `Oracle` | Conectividade com o banco via `PetPulseContext` (EF Core) |
 | `FIAP` | Disponibilidade de um serviço HTTP externo |
+| `MongoDB` | Conectividade com o MongoDB (histórico de leituras IoT) |
 
 Exemplo de resposta:
 
@@ -317,7 +320,8 @@ Exemplo de resposta:
   "checks": [
     { "name": "PetPulse API", "status": "Healthy", "description": "API está no ar", "duration": "00:00:00.0000010", "error": null },
     { "name": "Oracle", "status": "Healthy", "description": null, "duration": "00:00:00.0987654", "error": null },
-    { "name": "FIAP", "status": "Healthy", "description": null, "duration": "00:00:00.0456789", "error": null }
+    { "name": "FIAP", "status": "Healthy", "description": null, "duration": "00:00:00.0456789", "error": null },
+    { "name": "MongoDB", "status": "Healthy", "description": null, "duration": "00:00:00.0123456", "error": null }
   ]
 }
 ```
@@ -454,6 +458,58 @@ POST /api/auth/login
 
 ---
 
+## MongoDB — histórico de leituras IoT
+
+Além do Oracle (dados relacionais), a API usa o **MongoDB** para guardar o **histórico completo das leituras da coleira IoT** — o mesmo JSON que o firmware do ESP32 ([PetPulse-Iot](https://github.com/Fiap-2tdspg-Challenge/PetPulse-Iot)) gera em `GET /api/dados`.
+
+| Banco | O que guarda | Por quê |
+|---|---|---|
+| Oracle (`PP_DispositivoIots`) | Só a **última** leitura de cada dispositivo (estado atual) | Dado relacional, ligado a pet e usuário, consultado com frequência |
+| MongoDB (coleção `leituras_iot`) | **Todas** as leituras recebidas (série temporal) | Alto volume, só inserções, esquema flexível — se o firmware passar a enviar um sensor novo, nada precisa ser migrado |
+
+Ao registrar uma leitura (`POST /api/DispositivoIot/{dispositivoId}/leituras`), a API grava o documento no MongoDB **e** atualiza a última leitura do dispositivo no Oracle.
+
+Detalhes da implementação (mesmo modelo do repositório de referência da disciplina):
+
+- **Documento:** `PetPulse.Domain/Entites/Mongo/LeituraIotDocument.cs`, com `Id` (Guid como UUID padrão), `dispositivoId`, `petId`, sinais vitais, `estado`, `alerta`, `dataLeitura` e `registradoEm`. Os campos são gravados em camelCase.
+- **Repositório:** `LeituraIotRepository` (Infrastructure) implementa `ILeituraIotRepository` (Application) com o `MongoDB.Driver`. As leituras são eventos imutáveis, então o repositório só inclui, consulta e exclui — não existe atualização.
+- **Índice:** composto `{ dispositivoId: 1, dataLeitura: -1 }`, no mesmo formato da consulta de histórico, criado automaticamente.
+- **Configuração:** `MongoServiceCollectionExtensions.AddPetPulseMongo` registra `IMongoClient` e `IMongoDatabase` como singleton. A connection string vem de `ConnectionStrings:PetPulseMongo` (User Secrets localmente, variável secreta na nuvem) e o nome do banco de `MongoDatabase:Name` (padrão `petpulse`).
+- **Health check:** o `/health` inclui o check `MongoDB`.
+
+Exemplo de documento na coleção `leituras_iot`:
+
+```json
+{
+  "_id": "6f1c0a2e-1b4a-4c3d-9e10-0a1b2c3d4e5f",
+  "dispositivoId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "petId": "9b2e7c1a-4d3f-4e8b-a1c2-5d6e7f8a9b0c",
+  "codigoDispositivo": "COLLAR-001",
+  "frequenciaCardiaca": 95,
+  "nivelAtividade": 45,
+  "descAtividade": "caminhada",
+  "aceleracaoTotal": 1.23,
+  "pressaoSistolica": 130,
+  "pressaoDiastolica": 80,
+  "temperatura": 38.5,
+  "score": 87,
+  "estado": "OK",
+  "alerta": "",
+  "uptime": 12345,
+  "dataLeitura": "2026-10-19T15:00:00Z",
+  "registradoEm": "2026-10-19T15:00:01Z"
+}
+```
+
+Para conferir os dados direto no MongoDB (Compass ou `mongosh`):
+
+```javascript
+use petpulse
+db.leituras_iot.find({ dispositivoId: UUID("<id-do-dispositivo>") }).sort({ dataLeitura: -1 }).limit(10)
+```
+
+---
+
 ## Testes automatizados
 
 A solução conta com testes automatizados em **xUnit**, organizados por camada e espelhando a própria Clean Architecture do projeto. Cada projeto de produção tem seu par de testes:
@@ -461,8 +517,8 @@ A solução conta com testes automatizados em **xUnit**, organizados por camada 
 | Projeto de teste | Camada testada | O que cobre |
 |---|---|---|
 | `PetPulse.Domain.Tests` | Domínio | Regras de negócio das entidades `Usuario`, `Pet`, `HistoricoClinico`, `DispositivoIot` e `AlertaInteligente` — construção, validações de guarda (ex.: nome vazio, peso negativo, data futura) e os métodos `AtualizarDados` de cada entidade |
-| `PetPulse.Application.Tests` | Application (DTOs) | Mapeamento `ToDomain()`/`FromDomain()` e validação (`DataAnnotations`) dos DTOs de request/response das 5 entidades |
-| `PetPulse.API.Tests` | API / Controllers / Middlewares / Auth | Os 6 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`, `AuthController`), com os repositórios/serviços isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`, `401 Unauthorized`). Também cobre o `CorrelationIdMiddleware`, o `GlobalExceptionHandler`, o `LoginService` e a emissão de token no `JwtTokenIssuer` |
+| `PetPulse.Application.Tests` | Application (DTOs) | Mapeamento `ToDomain()`/`FromDomain()` e validação (`DataAnnotations`) dos DTOs de request/response das 5 entidades, do login e das leituras IoT (MongoDB) |
+| `PetPulse.API.Tests` | API / Controllers / Middlewares / Auth | Os 7 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`, `AuthController`, `LeituraIotController`), com os repositórios/serviços isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`, `401 Unauthorized`). Também cobre o `CorrelationIdMiddleware`, o `GlobalExceptionHandler`, o `LoginService` e a emissão de token no `JwtTokenIssuer` |
 | `PetPulse.Infrastructure.Tests` | Infraestrutura | As implementações EF Core dos 5 repositórios (`PetRepository`, `UsuarioRepository`, `HistoricoClinicoRepository`, `DispositivoIotRepository`, `AlertaInteligenteRepository`), usando `Microsoft.EntityFrameworkCore.InMemory`. Cobre persistência (`Add`/`Update`/`Delete`), buscas por relacionamento (ex.: pets de um usuário, histórico de um pet) e regras como a checagem case-insensitive de e-mail |
 
 ### Executando os testes
@@ -494,7 +550,7 @@ dotnet test PetPulse.Infrastructure.Tests\PetPulse.Infrastructure.Tests.csproj
 
 ### Opção 1 — Localmente com .NET (requer Oracle externo)
 
-Use esta opção se você já tem uma instância Oracle disponível (ex.: Oracle FIAP).
+Use esta opção se você já tem uma instância Oracle disponível (ex.: Oracle FIAP) e um MongoDB acessível (ex.: instalado localmente na porta padrão `27017`, ou um cluster do MongoDB Atlas).
 
 **1. Clone o repositório**
 
@@ -511,6 +567,7 @@ A connection string e a chave JWT não ficam no `appsettings.json`. Localmente e
 cd PetPulse.API
 dotnet user-secrets set "ConnectionStrings:PetPulseOracle" "Data Source=oracle.fiap.com.br:1521/orcl;User ID=SEU_RM;Password=SUA_SENHA;"
 dotnet user-secrets set "Jwt:Key" "UMA-CHAVE-ALEATORIA-COM-PELO-MENOS-32-CARACTERES"
+dotnet user-secrets set "ConnectionStrings:PetPulseMongo" "mongodb://localhost:27017"
 cd ..
 ```
 
@@ -574,6 +631,7 @@ Isso irá:
 - Baixar a imagem `pietrowilhelm/challenge-clyvo-vet:latest` do Docker Hub
 - Criar o volume `oracle_data` para persistência dos dados
 - Inicializar o Oracle XE (aguarde ~2 minutos para o healthcheck passar)
+- Subir o MongoDB 7 (`petpulse-mongo`) para o histórico de leituras IoT — exposto na porta `27018` do host, para não conflitar com um MongoDB instalado localmente
 - Subir a API na porta `8080`
 
 **4. Verifique se os containers estão saudáveis**
@@ -792,6 +850,8 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 | `Jwt__Key` | _(nenhum — obrigatória)_ | Chave de assinatura dos tokens JWT (mín. 32 caracteres). Local: User Secrets ou `.env`; nuvem: variável secreta da pipeline (ou Key Vault, segredo `jwt-key`) |
 | `Jwt__Issuer` | `PetPulse` | Emissor (`iss`) do token JWT |
 | `Jwt__Audience` | `PetPulse.API` | Público-alvo (`aud`) do token JWT |
+| `ConnectionStrings__PetPulseMongo` | _(nenhum — obrigatória)_ | Connection string do MongoDB (histórico de leituras IoT). Local: User Secrets (ex.: `mongodb://localhost:27017`) ou definida pelo `docker-compose.yml`; nuvem: variável secreta da pipeline |
+| `MongoDatabase__Name` | `petpulse` | Nome do banco no MongoDB |
 
 > **Por que não usar `ASPNETCORE_ENVIRONMENT=Development`?** A partir do .NET 8, o ASP.NET Core liga automaticamente a *Developer Exception Page* sempre que o ambiente é literalmente `Development` — e ela intercepta qualquer exceção não tratada **antes** do `GlobalExceptionHandler`, devolvendo um `500` cru (stack trace completo, headers da requisição) em vez da resposta `ProblemDetails` mapeada. Por isso o `launchSettings.json` (execução local com `dotnet run`) usa `ASPNETCORE_ENVIRONMENT=Local`, e a imagem Docker (`dockerfile`, usada pelo Docker Compose e pelo ACI) usa `Production` — um nome qualquer diferente de `Development` já é suficiente para que o `GlobalExceptionHandler` sempre responda, em qualquer forma de executar o projeto. O único efeito colateral é que o campo `traceId` (que só aparece quando `environment.IsDevelopment()` é verdadeiro) não é exibido nesse modo — o `correlationId` continua presente normalmente.
 
@@ -852,6 +912,15 @@ A API aceita as seguintes variáveis de ambiente. Os valores sensíveis (connect
 | PUT    | `/api/DispositivoIot/{id}`        | Atualiza dispositivo IoT     | Sim        |
 | DELETE | `/api/DispositivoIot/{id}`        | Remove dispositivo IoT       | Sim        |
 
+### Leituras IoT (MongoDB)
+
+| Método | Endpoint                                                 | Descrição                                      | Protegido? |
+| ------ | -------------------------------------------------------- | ---------------------------------------------- | ---------- |
+| GET    | `/api/DispositivoIot/{dispositivoId}/leituras?limite=50` | Histórico de leituras (mais recentes primeiro) | Sim        |
+| GET    | `/api/DispositivoIot/{dispositivoId}/leituras/{id}`      | Busca uma leitura                              | Sim        |
+| POST   | `/api/DispositivoIot/{dispositivoId}/leituras`           | Registra leitura (MongoDB + última no Oracle)  | Sim        |
+| DELETE | `/api/DispositivoIot/{dispositivoId}/leituras/{id}`      | Remove uma leitura do histórico                | Sim        |
+
 ### Alerta Inteligente
 
 | Método | Endpoint                                 | Descrição                      | Protegido? |
@@ -878,7 +947,8 @@ Como existem relacionamentos entre as entidades, recomenda-se testar na seguinte
 4. Criar pet usando o ID do usuário
 5. Criar histórico clínico usando o ID do pet
 6. Criar dispositivo IoT usando o ID do pet
-7. Criar alerta inteligente usando o ID do pet
+7. Registrar leituras da coleira (histórico no MongoDB) usando o ID do dispositivo
+8. Criar alerta inteligente usando o ID do pet
 ```
 
 > Importante: ao testar pelo Swagger, sempre copie os IDs retornados pela própria API. No Oracle, os IDs do tipo GUID podem aparecer como `RAW(16)`, em formato diferente do usado no JSON. Para o passo 3, clique em **Authorize** no topo do Swagger UI e cole o `accessToken` do passo 2.
@@ -1088,6 +1158,47 @@ status:
 ```text
 201 Created
 ```
+
+---
+
+## 4.1 Registrar leitura da coleira (MongoDB)
+
+### Endpoint
+
+```http
+POST /api/DispositivoIot/{dispositivoId}/leituras
+```
+
+Use o `id` retornado na criação do dispositivo IoT. O dispositivo precisa estar com `status` = 1 (Ativo).
+
+### Body
+
+Mesmo JSON que a coleira (ESP32) gera em `GET /api/dados`. Só `frequenciaCardiaca` é obrigatória; campos extras, como `pet`, são ignorados:
+
+```json
+{
+  "idDispositivo": "COLLAR-001",
+  "frequenciaCardiaca": 95,
+  "nivelAtividade": 45,
+  "descAtividade": "caminhada",
+  "aceleracaoTotal": 1.23,
+  "pressaoSistolica": 130,
+  "pressaoDiastolica": 80,
+  "temperatura": 38.5,
+  "score": 87,
+  "estado": "OK",
+  "alerta": "",
+  "uptime": 12345
+}
+```
+
+### Resultado esperado
+
+```text
+201 Created
+```
+
+A leitura aparece em `GET /api/DispositivoIot/{dispositivoId}/leituras`, e o `GET /api/DispositivoIot/{dispositivoId}` passa a mostrar essa frequência cardíaca como a última leitura (Oracle).
 
 ---
 

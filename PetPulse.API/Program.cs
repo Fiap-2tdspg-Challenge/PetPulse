@@ -40,6 +40,9 @@ builder.Services.AddPetPulseRepositories();
 
 builder.Services.AddPetPulseAuth(builder.Configuration);
 
+// MongoDB: histórico de leituras da coleira IoT (o Oracle guarda só a última leitura).
+builder.Services.AddPetPulseMongo(builder.Configuration);
+
 builder.Services.addPetPulseSwagger(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -50,7 +53,11 @@ builder.Services.AddControllers();
 builder.Services.AddHealthChecks()
     .AddCheck("PetPulse API", () => HealthCheckResult.Healthy("API está no ar"))
     .AddDbContextCheck<PetPulseContext>("Oracle")
-    .AddUrlGroup(new Uri("https://fiap.com.br"), name: "FIAP"); // ou outro serviço externo real, mas atualmente não consumimos nenhum
+    .AddUrlGroup(new Uri("https://fiap.com.br"), name: "FIAP") // ou outro serviço externo real, mas atualmente não consumimos nenhum
+    .AddMongoDb(
+        databaseNameFactory: _ => MongoServiceCollectionExtensions.GetDatabaseName(builder.Configuration),
+        name: "MongoDB",
+        timeout: TimeSpan.FromSeconds(10));
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

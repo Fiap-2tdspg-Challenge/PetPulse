@@ -1,6 +1,6 @@
 # =============================================================
 # PetPulse – Challenge FIAP 2026
-# Serviços: Oracle XE 21c + PetPulse API (.NET 10)
+# Serviços: Oracle XE 21c + MongoDB 7 + PetPulse API (.NET 10)
 # Uso: cp .env.example .env  (preencha as senhas)  e depois  docker compose up -d
 # =============================================================
 
@@ -30,6 +30,26 @@ services:
       start_period: 120s
 
   # -----------------------------------------------------------
+  # MongoDB 7 – histórico de leituras da coleira IoT (NoSQL)
+  # Porta 27018 no host para não conflitar com um MongoDB instalado
+  # localmente (27017); dentro da rede do compose a API usa mongo:27017.
+  # -----------------------------------------------------------
+  mongo:
+    image: mongo:7
+    container_name: petpulse-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - challenge_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # -----------------------------------------------------------
   # PetPulse API – .NET 10
   # -----------------------------------------------------------
   petpulse-api:
@@ -43,9 +63,12 @@ services:
     environment:
       - ConnectionStrings__PetPulseOracle=Data Source=oracle-db:1521/XEPDB1;User ID=petpulse;Password=${ORACLE_APP_PASSWORD:?Defina ORACLE_APP_PASSWORD no arquivo .env};
       - Jwt__Key=${JWT_KEY:?Defina JWT_KEY no arquivo .env}
+      - ConnectionStrings__PetPulseMongo=mongodb://mongo:27017
       - ASPNETCORE_URLS=http://+:8080
     depends_on:
       oracle-db:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
     networks:
       - challenge_net
@@ -57,6 +80,8 @@ services:
 volumes:
   oracle_data:
     name: oracle_data
+  mongo_data:
+    name: mongo_data
 
 # ---------------------------------------------------------------
 # Rede interna dos serviços
