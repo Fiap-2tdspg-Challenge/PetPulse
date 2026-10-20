@@ -130,3 +130,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Expõe a classe Program gerada pelos top-level statements para os testes de integração
+// (WebApplicationFactory<Program> no projeto PetPulse.API.Tests).
+public partial class Program { }

@@ -626,6 +626,27 @@ A solução conta com testes automatizados em **xUnit**, organizados por camada 
 | `PetPulse.API.Tests` | API / Controllers / Middlewares / Auth | Os 7 controllers (`UsuarioController`, `PetController`, `HistoricoClinicoController`, `DispositivoIotController`, `AlertaInteligenteController`, `AuthController`, `LeituraIotController`), com os repositórios/serviços isolados via **Moq**. Cobre cenários de sucesso (`200`/`201`/`204`), regras de negócio (ex.: e-mail/CPF duplicado, dispositivo já vinculado a um pet) e casos de erro (`404 Not Found`, `400 Bad Request`, `401 Unauthorized`). Também cobre o `CorrelationIdMiddleware`, o `GlobalExceptionHandler`, o `LoginService` e a emissão de token no `JwtTokenIssuer` |
 | `PetPulse.Infrastructure.Tests` | Infraestrutura | As implementações EF Core dos 5 repositórios (`PetRepository`, `UsuarioRepository`, `HistoricoClinicoRepository`, `DispositivoIotRepository`, `AlertaInteligenteRepository`), usando `Microsoft.EntityFrameworkCore.InMemory`. Cobre persistência (`Add`/`Update`/`Delete`), buscas por relacionamento (ex.: pets de um usuário, histórico de um pet) e regras como a checagem case-insensitive de e-mail |
 
+### Testes de integração
+
+Além dos testes unitários, o `PetPulse.API.Tests` tem testes de **integração ponta a ponta** (pasta `Integration/`) com `WebApplicationFactory<Program>` (`Microsoft.AspNetCore.Mvc.Testing`). Eles sobem a API real em memória — mesmo `Program.cs`, middlewares, autenticação JWT, controllers, repositórios e EF Core — e fazem requisições HTTP de verdade. Só a infraestrutura externa é trocada, para rodarem em qualquer máquina e na pipeline sem banco: o Oracle vira EF Core InMemory e os health checks externos (MongoDB e URL da FIAP) saem do `/health`.
+
+| Cenário | Resultado esperado |
+|---|---|
+| `GET /health` | `200` com status `Healthy` e a checagem do banco |
+| `GET /swagger/v1/swagger.json` | Documento OpenAPI com os endpoints |
+| Endpoint protegido sem token / com token inválido | `401 Unauthorized` |
+| Cadastro de usuário + login | Token JWT emitido e aceito nos endpoints protegidos |
+| Login com senha incorreta / cadastro com dados inválidos | `401` / `400` |
+| CRUD completo de pet (criar, consultar, atualizar, remover) | `201` → `200` → `200` → `204` → `404`, com links HATEOAS |
+| Listagem com filtro, ordenação e paginação | Página correta (`totalItems`, `hasNext`, ordem por peso) e link `next` mantendo os parâmetros |
+| Listagem com parâmetros inválidos | `400 Bad Request` |
+
+Rodar só os testes de integração:
+
+```powershell
+dotnet test PetPulse.API.Tests\PetPulse.API.Tests.csproj --filter "FullyQualifiedName~Integration"
+```
+
 ### Executando os testes
 
 Rodar toda a suíte:
