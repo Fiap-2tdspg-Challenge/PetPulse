@@ -51,7 +51,7 @@ builder.Services.AddControllers();
 
 // HealthChecks
 builder.Services.AddHealthChecks()
-    .AddCheck("PetPulse API", () => HealthCheckResult.Healthy("API está no ar"))
+    .AddCheck("PetPulse API", () => HealthCheckResult.Healthy("API está no ar e está na nuvem"))
     .AddDbContextCheck<PetPulseContext>("Oracle")
     .AddUrlGroup(new Uri("https://fiap.com.br"), name: "FIAP") // ou outro serviço externo real, mas atualmente não consumimos nenhum
     .AddMongoDb(
